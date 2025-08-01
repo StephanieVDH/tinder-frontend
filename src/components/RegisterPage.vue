@@ -140,29 +140,31 @@ export default {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3E065F 0%, #D7263D  100%);
 }
 
 .register-card {
-  background: #ffffff;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  background: #FFFFFF;
+  padding: 2.5rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 16px rgba(31, 31, 46, 0.2);
   width: 100%;
-  max-width: 500px;
+  max-width: 520px;
 }
 
 .register-card h1 {
   text-align: center;
-  margin-bottom: 1.5rem;
-  color: #333333;
-  font-size: 1.75rem;
+  margin-bottom: 2rem;
+  color: #3E065F;
+  font-family: 'Poppins', sans-serif;
+  font-size: 2rem;
+  font-weight: bold;
 }
 
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
+  gap: 1.2rem;
 }
 
 .form-group {
@@ -171,34 +173,44 @@ export default {
 }
 
 label {
-  margin-bottom: 0.5rem;
-  color: #555555;
-  font-weight: 500;
+  margin-bottom: 0.4rem;
+  color: #1F1F2E;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
 }
 
 input,
 select {
-  padding: 0.75rem;
-  border: 1px solid #cccccc;
-  border-radius: 6px;
+  padding: 0.7rem;
+  border: 1px solid #D7263D;
+  border-radius: 8px;
   font-size: 1rem;
-  color: #333333;
+  color: #1F1F2E;
+  font-family: 'Inter', sans-serif;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: #FFB400;
+  box-shadow: 0 0 0 3px rgba(255, 180, 0, 0.3);
 }
 
 .btn-primary {
-  background: linear-gradient(90deg, #ff5a5f 0%, #ff995e 100%);
-  color: #ffffff;
+  background: #D7263D ;
+  color: #FFFFFF;
   border: none;
-  padding: 0.75rem;
+  padding: 0.8rem;
   font-size: 1rem;
   font-weight: 600;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(90deg, #e04a55 0%, #e08454 100%);
+  transform: scale(1.03);
+  box-shadow: 0 4px 12px rgba(215, 38, 61, 0.3);
 }
 
 .full-width {
