@@ -99,7 +99,7 @@ export default {
 #homepage {
   min-height: 100vh;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #542254;
+  background: #fef4e9;
 }
 
 /* Header */
@@ -337,7 +337,7 @@ export default {
     gap: 1rem;
   }
   
-  .btn-primary, .btn-secondary {
+  .btn {
     width: 100%;
     max-width: 280px;
   }
