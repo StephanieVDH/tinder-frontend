@@ -38,30 +38,38 @@ export default {
   
   methods: {
     async handleLogin() {
-        try {
-            const response = await fetch('http://localhost:3000/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                email: this.email,
-                password: this.password
-            })
-            });
+    try {
+      const response = await fetch('http://localhost:3000/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: this.email,
+          password: this.password
+        })
+      });
 
-        const data = await response.json();
+      const data = await response.json();
 
-        if (!response.ok) {
+      if (!response.ok) {
         alert(data.error || 'Login failed');
         return;
-        }
+      }
 
-        alert(data.message);
-        this.$router.push({ name: 'home' });
+      alert(data.message);
 
-        } catch (error) {
-            console.error(error);
-            alert('An error occurred during login.');
-        }
+      // Redirect based on role
+      if (data.user.role === 'user') {
+        this.$router.push({ name: 'swipe' });
+      } else if (data.user.role === 'admin') {
+        this.$router.push({ name: 'admin' });
+      } else {
+        this.$router.push({ name: 'home' }); // fallback
+      }
+
+    } catch (error) {
+      console.error(error);
+      alert('An error occurred during login.');
+    }
     }}};
 </script>
 

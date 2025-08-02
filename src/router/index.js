@@ -5,6 +5,7 @@ import HomePage from '@/components/HomePage.vue';
 import RegisterPage from '@/components/RegisterPage.vue';
 import LogIn from '@/components/LogIn.vue'; 
 import AdminPage from '@/components/AdminPage.vue'; 
+import SwipePage from '@/components/SwipePage.vue';
 
 Vue.use(Router);
 
@@ -30,6 +31,12 @@ export default new Router({
       path: '/admin',
       name: 'admin',
       component: AdminPage,
+    },
+    {
+      path: '/swipe',
+      name: 'swipe',
+      component: SwipePage,
     }
+
   ],
 });
