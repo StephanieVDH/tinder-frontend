@@ -35,14 +35,34 @@ export default {
       password: ''
     };
   },
+  
   methods: {
-    handleLogin() {
-      // Simple login stub — replace with real authentication call
-      alert(`Email: ${this.email}\nPassword: ${this.password}`);
-      // POST to backend login endpoint, e.g., fetch('/api/login', { method: 'POST', body: JSON.stringify(...) })
-    }
-  }
-};
+    async handleLogin() {
+        try {
+            const response = await fetch('http://localhost:3000/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: this.email,
+                password: this.password
+            })
+            });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+        alert(data.error || 'Login failed');
+        return;
+        }
+
+        alert(data.message);
+        this.$router.push({ name: 'home' });
+
+        } catch (error) {
+            console.error(error);
+            alert('An error occurred during login.');
+        }
+    }}};
 </script>
 
 <style scoped>
