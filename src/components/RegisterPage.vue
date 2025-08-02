@@ -1,7 +1,13 @@
 <template>
   <div class="register-page">
+        <div class="register-header">
+      <div class="logo">🔥 Flare</div>
+    </div>
+
+    <div class="register-main">
+    <div class="register-content">
+    <h1 class="register-title">Create Account</h1>
     <div class="register-card">
-      <h1>Create Account</h1>
       <form @submit.prevent="registerUser" enctype="multipart/form-data">
         <div class="form-grid">
           <div class="form-group">
@@ -65,6 +71,8 @@
         </div>
       </form>
     </div>
+  </div>
+  </div>
   </div>
 </template>
 
@@ -137,34 +145,70 @@ export default {
 <style scoped>
 .register-page {
   display: flex;
-  justify-content: center;
-  align-items: center;
+  flex-direction: column;
   min-height: 100vh;
-  background: linear-gradient(135deg, #3E065F 0%, #D7263D  100%);
+  background-color: #fef4e9;
+}
+
+.register-header {
+  background-color: #542254;
+  color: white;
+  padding: 1rem 2rem;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.logo {
+  display: inline-block;
+}
+
+.register-main {
+  flex: 1;
+  display: flex;
+  justify-content: center; /* centers horizontally */
+  align-items: flex-start; /* aligns near top */
+  padding-top: 3rem;        /* space below header */
+  padding-bottom: 2rem;
+}
+
+.register-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.register-title {
+  text-align: center;
+  margin-top: 2rem;
+  margin-bottom: 2.5rem;  /* was 0.5rem */
+  color: #dd1b45;
+  font-family: 'Arial', sans-serif;
+  font-size: 2.5rem;
+  font-weight: bold;
 }
 
 .register-card {
-  background: #FFFFFF;
-  padding: 2.5rem;
-  border-radius: 16px;
-  box-shadow: 0 8px 16px rgba(31, 31, 46, 0.2);
+  background: #ffffff;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
   width: 100%;
-  max-width: 520px;
+  max-width: 420px;
 }
 
 .register-card h1 {
   text-align: center;
-  margin-bottom: 2rem;
-  color: #3E065F;
-  font-family: 'Poppins', sans-serif;
+  margin-bottom: 1rem;
+  color: #dd1b45;
+  font-family: 'Arial', sans-serif;
   font-size: 2rem;
   font-weight: bold;
 }
 
 .form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .form-group {
@@ -174,47 +218,46 @@ export default {
 
 label {
   margin-bottom: 0.4rem;
-  color: #1F1F2E;
-  font-weight: 600;
-  font-family: 'Inter', sans-serif;
+  color: #542254;
+  font-weight: bold;
+  font-family: 'Arial', sans-serif;
 }
 
 input,
 select {
   padding: 0.7rem;
-  border: 1px solid #D7263D;
+  border: 1px solid #ccc;
   border-radius: 8px;
   font-size: 1rem;
-  color: #1F1F2E;
-  font-family: 'Inter', sans-serif;
+  color: #1f1f2e;
+  font-family: 'Arial', sans-serif;
 }
 
 input:focus,
 select:focus {
   outline: none;
-  border-color: #FFB400;
-  box-shadow: 0 0 0 3px rgba(255, 180, 0, 0.3);
+  border-color: #fe741c;
+  box-shadow: 0 0 0 3px rgba(254, 116, 28, 0.3);
 }
 
 .btn-primary {
-  background: #D7263D ;
-  color: #FFFFFF;
+  background: linear-gradient(to right, #dd1b45, #fe741c);
+  color: white;
   border: none;
   padding: 0.8rem;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: bold;
   border-radius: 8px;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: opacity 0.3s ease;
 }
 
 .btn-primary:hover {
-  transform: scale(1.03);
-  box-shadow: 0 4px 12px rgba(215, 38, 61, 0.3);
+  opacity: 0.9;
 }
 
 .full-width {
-  grid-column: 1 / -1;
+  width: 100%;
 }
 </style>
 
