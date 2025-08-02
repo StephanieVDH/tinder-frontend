@@ -37,6 +37,7 @@
         <div class="hero-buttons">
           <router-link to="/register" class="btn">Get Started</router-link>
         </div>
+        <button @click="goToAdmin" style="background-color: #dd1b45; color: white; padding: 10px 20px; border: none; border-radius: 8px; margin-top: 20px;">ADMIN TEST</button>
       </div>
     </section>
 
@@ -84,7 +85,13 @@
 
 <script>
 export default {
-  name: 'HomePage'
+  name: 'HomePage', 
+  //Admin weghalen na test (vergeet de komma na 'HomePage' niet!)
+  methods: { // dit weghalen na test
+    goToAdmin() { // dit weghalen na test
+      this.$router.push('/admin'); // dit weghalen na test
+    } // dit weghalen na test
+  } // dit weghalen na test
 }
 </script>
 

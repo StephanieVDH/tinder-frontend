@@ -21,11 +21,6 @@
           </div>
 
           <div class="form-group">
-            <label for="city">City</label>
-            <input id="city" v-model="city" type="text" required />
-          </div>
-
-          <div class="form-group">
             <label for="gender">Gender</label>
             <select id="gender" v-model="gender" required>
               <option disabled value="">Select an option</option>
@@ -39,11 +34,6 @@
           <div class="form-group">
             <label for="email">Email</label>
             <input id="email" v-model="email" type="email" required />
-          </div>
-
-          <div class="form-group">
-            <label for="phone">Phone Number</label>
-            <input id="phone" v-model="phone" type="tel" />
           </div>
 
           <div class="form-group">
@@ -84,10 +74,8 @@ export default {
     return {
       firstName: '',
       dob: '',
-      city: '',
       gender: '',
       email: '',
-      phone: '',
       password: '',
       confirmPassword: '',
       pictures: []
@@ -108,10 +96,8 @@ export default {
       const formData = new FormData();
       formData.append('firstName', this.firstName);
       formData.append('dob', this.dob);
-      formData.append('city', this.city);
       formData.append('gender', this.gender);
       formData.append('email', this.email);
-      formData.append('phone', this.phone);
       formData.append('password', this.password);
       this.pictures.forEach(file => formData.append('pictures', file));
 

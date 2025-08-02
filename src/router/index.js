@@ -4,6 +4,7 @@ import Router from 'vue-router';
 import HomePage from '@/components/HomePage.vue';
 import RegisterPage from '@/components/RegisterPage.vue';
 import LogIn from '@/components/LogIn.vue'; 
+import AdminPage from '@/components/AdminPage.vue'; 
 
 Vue.use(Router);
 
@@ -25,5 +26,10 @@ export default new Router({
       name: 'login',
       component: LogIn,
     },
+    {
+      path: '/admin',
+      name: 'admin',
+      component: AdminPage,
+    }
   ],
 });
