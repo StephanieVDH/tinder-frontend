@@ -51,31 +51,31 @@ export default {
   name: 'SwipePage',
   data() {
     return {
-      users: [
-        {
-          id: 1,
-          name: 'Alex',
-          age: 25,
-          bio: 'Loves hiking and pizza.',
-          picture: 'https://via.placeholder.com/300x300?text=Alex'
-        },
-        {
-          id: 2,
-          name: 'Jamie',
-          age: 30,
-          bio: 'Coffee addict and dog lover.',
-          picture: 'https://via.placeholder.com/300x300?text=Jamie'
-        }
-      ],
-      currentIndex: 0
+      users: [],
+      currentIndex: 0,
+      currentPictureIndex: 0
     };
   },
   computed: {
     currentUser() {
       return this.users[this.currentIndex] || null;
+    },
+    currentPicture() {
+      if (!this.currentUser) return '';
+      return this.currentUser.pictures[this.currentPictureIndex];
     }
   },
   methods: {
+    async fetchUsers() {
+      try {
+        const userId = localStorage.getItem('userId');
+        const response = await fetch(`http://localhost:3000/api/users/swipe/${userId}`);
+        const data = await response.json();
+        this.users = data;
+      } catch (error) {
+        console.error('Failed to load users:', error);
+      }
+    },
     like() {
       console.log('Liked', this.currentUser);
       this.nextUser();
@@ -86,14 +86,28 @@ export default {
     },
     nextUser() {
       this.currentIndex++;
+      this.currentPictureIndex = 0;
+    },
+    nextPicture() {
+      if (!this.currentUser) return;
+      this.currentPictureIndex = (this.currentPictureIndex + 1) % this.currentUser.pictures.length;
+    },
+    prevPicture() {
+      if (!this.currentUser) return;
+      this.currentPictureIndex =
+        (this.currentPictureIndex - 1 + this.currentUser.pictures.length) %
+        this.currentUser.pictures.length;
     },
     logout() {
-      console.log('Logged out');
+      localStorage.clear();
       this.$router.push({ name: 'Login' });
     },
     goToProfile() {
-      this.$router.push({ name: 'ProfilePage' });
+      this.$router.push({ name: 'profile' });
     }
+  },
+  mounted() {
+    this.fetchUsers();
   }
 };
 </script>

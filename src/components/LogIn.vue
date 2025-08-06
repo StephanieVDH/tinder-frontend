@@ -1,27 +1,31 @@
 <template>
   <div class="login-container">
-    <header class="login-header">
-      <div class="logo">🔥 Flare</div>
+    <header class="header">
+      <div class="nav-container">
+        <div class="logo">
+          <div class="logo-icon">
+            <img src="@/assets/logo.png" alt="Flare Logo" width="32" height="32" />
+          </div>
+          <span class="logo-text">Flare</span>
+        </div>
+      </div>
     </header>
-
     <section class="login-main">
       <h1>Welcome Back</h1>
       <p class="subtitle">Log in to continue making connections.</p>
-
       <form @submit.prevent="handleLogin" class="login-form">
         <label>Email</label>
         <input type="email" v-model="email" required placeholder="Enter your email" />
-
         <label>Password</label>
         <input type="password" v-model="password" required placeholder="Enter your password" />
-
-        <button type="submit" class="login-btn">Log In</button>
+        <button type="submit" class="login-btn" :disabled="isLoading">
+          {{ isLoading ? 'Logging in...' : 'Log In' }}
+        </button>
       </form>
-
       <p class="signup-link">
         Don't have an account?
         <router-link to="/register">Sign Up</router-link>
-    </p>
+      </p>
     </section>
   </div>
 </template>
@@ -32,45 +36,79 @@ export default {
   data() {
     return {
       email: '',
-      password: ''
+      password: '',
+      isLoading: false
     };
   },
-  
-  methods: {
-    async handleLogin() {
-    try {
-      const response = await fetch('http://localhost:3000/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: this.email,
-          password: this.password
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.error || 'Login failed');
-        return;
-      }
-
-      alert(data.message);
-
-      // Redirect based on role
-      if (data.user.role === 'user') {
-        this.$router.push({ name: 'swipe' });
-      } else if (data.user.role === 'admin') {
+  mounted() {
+    // Redirect if already logged in
+    if (this.isLoggedIn()) {
+      const user = this.getCurrentUser();
+      if (user.role === 'admin') {
         this.$router.push({ name: 'admin' });
       } else {
-        this.$router.push({ name: 'home' }); // fallback
+        this.$router.push({ name: 'swipe' });
       }
-
-    } catch (error) {
-      console.error(error);
-      alert('An error occurred during login.');
     }
-    }}};
+  },
+  methods: {
+    async handleLogin() {
+      this.isLoading = true;
+      try {
+        const response = await fetch('http://localhost:3000/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: this.email,
+            password: this.password
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          alert(data.error || 'Login failed');
+          return;
+        }
+
+        // Store user data in localStorage for persistent login
+        this.login(data.user);
+        
+        alert(data.message);
+        
+        // Redirect based on role
+        if (data.user.role === 'user') {
+          this.$router.push({ name: 'swipe' });
+        } else if (data.user.role === 'admin') {
+          this.$router.push({ name: 'admin' });
+        } else {
+          this.$router.push({ name: 'home' }); // fallback
+        }
+        
+      } catch (error) {
+        console.error(error);
+        alert('An error occurred during login.');
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    // Authentication helper methods
+    login(userData) {
+      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('isLoggedIn', 'true');
+    },
+
+    isLoggedIn() {
+      return localStorage.getItem('isLoggedIn') === 'true';
+    },
+
+    getCurrentUser() {
+      const userData = localStorage.getItem('user');
+      return userData ? JSON.parse(userData) : null;
+    }
+  }
+};
 </script>
 
 <style scoped>
@@ -83,20 +121,42 @@ export default {
   flex-direction: column;
 }
 
-.login-header {
-  background-color: #542254;
-  color: white;
-  padding: 1rem 2rem;
-  font-size: 1.5rem;
-  font-weight: bold;
+.header {
+  background: #542254;
+  padding: 1rem 0;
+  position: relative;
+  z-index: 100;
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .logo {
-  display: inline-block;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo-icon img {
+  display: block;
+  border-radius: 4px;
+}
+
+.logo-text {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  font-size: 1.75rem;
+  color: #FFFFFF;
 }
 
 .login-main {
-  margin-top: 4rem; 
+  margin-top: 4rem;
   margin-bottom: 2rem;
   display: flex;
   flex-direction: column;
@@ -154,8 +214,13 @@ export default {
   transition: opacity 0.3s ease;
 }
 
-.login-btn:hover {
+.login-btn:hover:not(:disabled) {
   opacity: 0.9;
+}
+
+.login-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .signup-link {

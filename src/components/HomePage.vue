@@ -5,16 +5,7 @@
       <div class="nav-container">
         <div class="logo">
           <div class="logo-icon">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <path d="M16 28C22.6274 28 28 22.6274 28 16C28 9.37258 22.6274 4 16 4C9.37258 4 4 9.37258 4 16C4 22.6274 9.37258 28 16 28Z" fill="url(#heartGradient)"/>
-              <path d="M12 14C12 12.8954 12.8954 12 14 12C15.1046 12 16 12.8954 16 14V16H18C19.1046 16 20 16.8954 20 18C20 19.1046 19.1046 20 18 20H14C12.8954 20 12 19.1046 12 18V14Z" fill="white"/>
-              <defs>
-                <linearGradient id="heartGradient" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#D7263D"/>
-                  <stop offset="1" stop-color="#FFB400"/>
-                </linearGradient>
-              </defs>
-            </svg>
+            <img src="@/assets/logo.png" alt="Flare Logo" width="32" height="32" />
           </div>
           <span class="logo-text">Flare</span>
         </div>
@@ -37,7 +28,7 @@
         <div class="hero-buttons">
           <router-link to="/register" class="btn">Get Started</router-link>
         </div>
-        <button @click="goToAdmin" style="background-color: #dd1b45; color: white; padding: 10px 20px; border: none; border-radius: 8px; margin-top: 20px;">ADMIN TEST</button>
+        <button @click="goToAdmin" style="background-color: #dd1b45; color: white; padding: 10px 20px; border: none; border-radius: 8px; margin-top: 20px;">PROFILE PAGE TEST</button>
       </div>
     </section>
 
@@ -89,7 +80,7 @@ export default {
   //Admin weghalen na test (vergeet de komma na 'HomePage' niet!)
   methods: { // dit weghalen na test
     goToAdmin() { // dit weghalen na test
-      this.$router.push('/admin'); // dit weghalen na test
+      this.$router.push('/profile'); // dit weghalen na test
     } // dit weghalen na test
   } // dit weghalen na test
 }
@@ -130,6 +121,11 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+.logo-icon img {
+  display: block;
+  border-radius: 4px;
 }
 
 .logo-text {
