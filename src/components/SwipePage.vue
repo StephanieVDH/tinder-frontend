@@ -242,8 +242,7 @@ export default {
     },
     
     goToMatches() {
-      // You can create a matches page later
-      alert('Matches page coming soon!');
+      this.$router.push({ name: 'matches' });
     }
   },
   

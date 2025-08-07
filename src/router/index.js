@@ -6,6 +6,7 @@ import LogIn from '@/components/LogIn.vue';
 import AdminPage from '@/components/AdminPage.vue';
 import SwipePage from '@/components/SwipePage.vue';
 import UserProfile from '@/components/UserProfile.vue';
+import Matches from '@/components/Matches.vue'; 
 import { AuthService } from '@/auth.js';
 
 Vue.use(Router);
@@ -44,6 +45,12 @@ const router = new Router({
       path: '/profile',
       name: 'profile',
       component: UserProfile,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/matches',
+      name: 'matches',
+      component: Matches,
       meta: { requiresAuth: true }
     }
   ],
