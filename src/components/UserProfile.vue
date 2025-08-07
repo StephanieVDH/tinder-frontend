@@ -147,7 +147,7 @@
                 </div>
 
                 <div class="age-range-group">
-                  <label class="form-label age-range-label">Age Range</label>
+                  <label class="form-label">Age Range</label>
                   <div class="range-inputs">
                     <div class="range-input">
                       <input v-model.number="preferences.MinAge" type="number" min="18" max="99" class="form-input" />
@@ -214,7 +214,7 @@ export default {
     checkAuth() {
       // Check if user is logged in
       if (!AuthService.isLoggedIn()) {
-        this.$router.push({ name: 'Login' });
+        this.$router.push({ name: 'login' });
         return false;
       }
       
@@ -222,7 +222,7 @@ export default {
       this.userId = AuthService.getUserId();
       if (!this.userId) {
         console.error('No user ID found');
-        this.$router.push({ name: 'Login' });
+        this.$router.push({ name: 'login' });
         return false;
       }
       
@@ -230,7 +230,7 @@ export default {
     },
     fetchProfile() {
       // Include user ID in the API call
-      fetch(`/api/profile/${this.userId}`, {
+      fetch(`http://localhost:3000/api/profile/${this.userId}`, {
         headers: {
           'Authorization': `Bearer ${this.userId}`, // Include auth header
           'Content-Type': 'application/json'
@@ -240,7 +240,7 @@ export default {
           if (res.status === 401) {
             // Unauthorized - redirect to login
             AuthService.logout();
-            this.$router.push({ name: 'Login' });
+            this.$router.push({ name: 'login' });
             throw new Error('Unauthorized');
           }
           return res.json();
@@ -256,7 +256,7 @@ export default {
         });
 
       // Fetch genders
-      fetch('/api/genders', {
+      fetch('http://localhost:3000/api/genders', {
         headers: {
           'Authorization': `Bearer ${this.userId}`
         }
@@ -270,7 +270,7 @@ export default {
       this.fetchPreferences();
     },
     fetchPreferences() {
-      fetch(`/api/preferences/${this.userId}`, {
+      fetch(`http://localhost:3000/api/preferences/${this.userId}`, {
         headers: {
           'Authorization': `Bearer ${this.userId}`,
           'Content-Type': 'application/json'
@@ -334,7 +334,7 @@ export default {
         formData.append('profilePicture', this.profilePicture);
       }
 
-      fetch(`/api/profile/${this.userId}`, {
+      fetch(`http://localhost:3000/api/profile/${this.userId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${this.userId}`
@@ -361,7 +361,7 @@ export default {
         });
     },
     updatePreferences() {
-      fetch(`/api/preferences/${this.userId}`, {
+      fetch(`http://localhost:3000/api/preferences/${this.userId}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -391,13 +391,13 @@ export default {
       });
     },
     goToSwipe() {
-      this.$router.push({ name: 'SwipePage' });
+      this.$router.push({ name: 'swipe' });
     },
     logout() {
       // Use AuthService to logout
       AuthService.logout();
       console.log('Logged out');
-      this.$router.push({ name: 'Login' });
+      this.$router.push({ name: 'login' });
     },
   },
   mounted() {
@@ -410,7 +410,7 @@ export default {
   beforeRouteEnter(to, from, next) {
     // Check if user is authenticated before entering the route
     if (!AuthService.isLoggedIn()) {
-      next({ name: 'Login' });
+      next({ name: 'login' });
     } else {
       next();
     }
@@ -762,23 +762,26 @@ export default {
 }
 
 .age-range-group {
-  margin: 1.5rem 0;
+  margin: 3rem 0;
 }
 
 .range-inputs {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1rem; 
+  margin-top: 1.5rem;
+  max-width: 150px; /* Constrain width to keep inputs closer */
 }
 
 .range-input {
   flex: 1;
   position: relative;
+  max-width: 150px; /* Limit individual input width */
 }
 
 .range-label {
   position: absolute;
-  top: -0.7rem;
+  top: -1rem;
   left: 0.875rem;
   background: white;
   padding: 0 0.5rem;

@@ -20,6 +20,7 @@
         </div>
         <div class="nav-actions">
           <button @click="goToProfile" class="nav-btn">Profile</button>
+          <button @click="goToMatches" class="nav-btn">Matches ({{ matchCount }})</button>
           <button @click="logout" class="nav-btn logout-btn">Logout</button>
         </div>
       </div>
@@ -28,32 +29,78 @@
     <!-- Instruction Text -->
     <p class="instruction-text">Swipe to match</p>
 
+    <!-- Match Notification -->
+    <div v-if="showMatchNotification" class="match-notification">
+      <div class="match-content">
+        <h2>It's a Match! 🎉</h2>
+        <p>You and {{ lastMatchedUser }} liked each other!</p>
+        <button @click="showMatchNotification = false" class="close-match-btn">Continue Swiping</button>
+      </div>
+    </div>
+
     <!-- Swipe Card -->
     <div class="card" v-if="currentUser">
-      <img :src="currentUser.picture" alt="Profile Picture" class="profile-pic" />
+      <div class="picture-container">
+        <img :src="currentPicture" alt="Profile Picture" class="profile-pic" />
+        <div class="picture-dots" v-if="currentUser.pictures && currentUser.pictures.length > 1">
+          <span 
+            v-for="(pic, index) in currentUser.pictures" 
+            :key="index"
+            :class="['dot', { active: index === currentPictureIndex }]"
+            @click="currentPictureIndex = index"
+          ></span>
+        </div>
+      </div>
       <h2>{{ currentUser.name }}, {{ currentUser.age }}</h2>
       <p>{{ currentUser.bio }}</p>
     </div>
 
     <!-- Swipe Buttons -->
     <div class="buttons" v-if="currentUser">
-      <button @click="dislike" class="dislike-btn">Dislike</button>
-      <button @click="like" class="like-btn">Like</button>
+      <button @click="dislike" class="dislike-btn" :disabled="isProcessing">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        </svg>
+        Dislike
+      </button>
+      <button @click="like" class="like-btn" :disabled="isProcessing">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg>
+        Like
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div v-else-if="isLoading" class="loading">
+      <p>Loading profiles...</p>
     </div>
 
     <!-- End of Users Message -->
-    <p v-else class="end-text">No more users to show.</p>
+    <div v-else class="end-container">
+      <p class="end-text">No more profiles to show!</p>
+      <p class="end-subtext">Check back later for new people</p>
+      <button @click="refreshUsers" class="refresh-btn">Refresh</button>
+    </div>
   </div>
 </template>
 
 <script>
+import { AuthService } from '@/auth.js';
+
 export default {
   name: 'SwipePage',
   data() {
     return {
       users: [],
       currentIndex: 0,
-      currentPictureIndex: 0
+      currentPictureIndex: 0,
+      isLoading: true,
+      isProcessing: false,
+      showMatchNotification: false,
+      lastMatchedUser: '',
+      matchCount: 0,
+      userId: null
     };
   },
   computed: {
@@ -62,52 +109,161 @@ export default {
     },
     currentPicture() {
       if (!this.currentUser) return '';
-      return this.currentUser.pictures[this.currentPictureIndex];
+      if (this.currentUser.pictures && this.currentUser.pictures.length > 0) {
+        return this.currentUser.pictures[this.currentPictureIndex];
+      }
+      return this.currentUser.picture || 'https://via.placeholder.com/300x300?text=User';
     }
   },
   methods: {
     async fetchUsers() {
+      this.isLoading = true;
       try {
-        const userId = localStorage.getItem('userId');
-        const response = await fetch(`http://localhost:3000/api/users/swipe/${userId}`);
+        // Get userId from AuthService instead of localStorage
+        this.userId = AuthService.getUserId();
+        if (!this.userId) {
+          this.$router.push({ name: 'login' });
+          return;
+        }
+
+        const response = await fetch(`http://localhost:3000/api/users/swipe/${this.userId}`, {
+          headers: {
+            'Authorization': `Bearer ${this.userId}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch users');
+        }
+        
         const data = await response.json();
         this.users = data;
+        this.currentIndex = 0;
+        this.currentPictureIndex = 0;
       } catch (error) {
         console.error('Failed to load users:', error);
+      } finally {
+        this.isLoading = false;
       }
     },
-    like() {
-      console.log('Liked', this.currentUser);
-      this.nextUser();
+    
+    async fetchMatchCount() {
+      try {
+        const response = await fetch(`http://localhost:3000/api/matches/${this.userId}`, {
+          headers: {
+            'Authorization': `Bearer ${this.userId}`
+          }
+        });
+        
+        if (response.ok) {
+          const matches = await response.json();
+          this.matchCount = matches.length;
+        }
+      } catch (error) {
+        console.error('Failed to fetch match count:', error);
+      }
     },
-    dislike() {
-      console.log('Disliked', this.currentUser);
-      this.nextUser();
+    
+    async recordSwipe(liked) {
+      if (!this.currentUser || this.isProcessing) return;
+      
+      this.isProcessing = true;
+      try {
+        const response = await fetch('http://localhost:3000/api/swipe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.userId}`
+          },
+          body: JSON.stringify({
+            swiperId: this.userId,
+            swipedId: this.currentUser.id,
+            liked: liked
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to record swipe');
+        }
+        
+        const result = await response.json();
+        
+        // Check if it's a match
+        if (result.isMatch) {
+          this.lastMatchedUser = this.currentUser.name;
+          this.showMatchNotification = true;
+          this.matchCount++;
+          
+          // Auto-hide notification after 3 seconds
+          setTimeout(() => {
+            this.showMatchNotification = false;
+          }, 3000);
+        }
+        
+        this.nextUser();
+      } catch (error) {
+        console.error('Failed to record swipe:', error);
+      } finally {
+        this.isProcessing = false;
+      }
     },
+    
+    async like() {
+      console.log('Liked', this.currentUser?.name);
+      await this.recordSwipe(true);
+    },
+    
+    async dislike() {
+      console.log('Disliked', this.currentUser?.name);
+      await this.recordSwipe(false);
+    },
+    
     nextUser() {
       this.currentIndex++;
       this.currentPictureIndex = 0;
+      
+      // If we've gone through all users, refresh the list
+      if (this.currentIndex >= this.users.length) {
+        this.fetchUsers();
+      }
     },
-    nextPicture() {
-      if (!this.currentUser) return;
-      this.currentPictureIndex = (this.currentPictureIndex + 1) % this.currentUser.pictures.length;
+    
+    refreshUsers() {
+      this.fetchUsers();
     },
-    prevPicture() {
-      if (!this.currentUser) return;
-      this.currentPictureIndex =
-        (this.currentPictureIndex - 1 + this.currentUser.pictures.length) %
-        this.currentUser.pictures.length;
-    },
+    
     logout() {
-      localStorage.clear();
-      this.$router.push({ name: 'Login' });
+      AuthService.logout();
+      this.$router.push({ name: 'login' });
     },
+    
     goToProfile() {
       this.$router.push({ name: 'profile' });
+    },
+    
+    goToMatches() {
+      // You can create a matches page later
+      alert('Matches page coming soon!');
     }
   },
+  
   mounted() {
+    // Check authentication
+    if (!AuthService.isLoggedIn()) {
+      this.$router.push({ name: 'login' });
+      return;
+    }
+    
     this.fetchUsers();
+    this.fetchMatchCount();
+  },
+  
+  beforeRouteEnter(to, from, next) {
+    if (!AuthService.isLoggedIn()) {
+      next({ name: 'login' });
+    } else {
+      next();
+    }
   }
 };
 </script>
@@ -201,6 +357,62 @@ export default {
   font-weight: 500;
 }
 
+/* Match Notification */
+.match-notification {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(135deg, #dd1b45, #f54438);
+  border-radius: 20px;
+  padding: 2rem;
+  z-index: 1000;
+  box-shadow: 0 10px 40px rgba(221, 27, 69, 0.4);
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.match-content {
+  text-align: center;
+  color: white;
+}
+
+.match-content h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.match-content p {
+  font-size: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+
+.close-match-btn {
+  background: white;
+  color: #dd1b45;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.close-match-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
 /* Swipe Card Styling */
 .card {
   background: white;
@@ -219,10 +431,39 @@ export default {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
+.picture-container {
+  position: relative;
+  margin-bottom: 15px;
+}
+
 .profile-pic {
   width: 100%;
+  height: 400px;
+  object-fit: cover;
   border-radius: 16px;
-  margin-bottom: 15px;
+}
+
+.picture-dots {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dot.active {
+  background: white;
+  transform: scale(1.2);
 }
 
 .card h2 {
@@ -239,6 +480,7 @@ export default {
   font-size: 1rem;
 }
 
+/* Buttons */
 .buttons {
   display: flex;
   justify-content: center;
@@ -255,6 +497,9 @@ export default {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .like-btn {
@@ -267,21 +512,62 @@ export default {
   color: white;
 }
 
-.like-btn:hover {
+.like-btn:hover:not(:disabled) {
   background-color: #c41539;
   transform: translateY(-1px);
 }
 
-.dislike-btn:hover {
+.dislike-btn:hover:not(:disabled) {
   background-color: #461d46;
   transform: translateY(-1px);
 }
 
-.end-text {
-  margin-top: 40px;
+.like-btn:disabled,
+.dislike-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Loading and End States */
+.loading {
+  margin-top: 100px;
   color: #542254;
   font-size: 18px;
-  font-weight: 500;
+}
+
+.end-container {
+  margin-top: 100px;
+  text-align: center;
+}
+
+.end-text {
+  color: #542254;
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.end-subtext {
+  color: #666;
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+
+.refresh-btn {
+  background: linear-gradient(135deg, #dd1b45, #f54438);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.refresh-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(221, 27, 69, 0.3);
 }
 
 /* Responsive Design */
@@ -306,6 +592,10 @@ export default {
   .card {
     max-width: 320px;
   }
+  
+  .profile-pic {
+    height: 350px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -328,6 +618,10 @@ export default {
   
   .card {
     max-width: 280px;
+  }
+  
+  .profile-pic {
+    height: 300px;
   }
 }
 </style>
