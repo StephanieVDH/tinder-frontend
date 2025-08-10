@@ -82,12 +82,20 @@
 
         <!-- Conversations List -->
         <div v-else-if="activeTab === 'conversations'" class="conversations-list">
-          <div class="coming-soon">
+          <div v-if="conversationsCount > 0" class="conversations-preview">
             <svg width="64" height="64" fill="#DD1B45" opacity="0.3" viewBox="0 0 24 24">
               <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/>
             </svg>
-            <h3>Conversations Coming Soon!</h3>
-            <p>Start chatting with your matches once the messaging feature is ready.</p>
+            <h3>You have {{ conversationsCount }} active conversation{{ conversationsCount !== 1 ? 's' : '' }}!</h3>
+            <p>Go to the full conversations page to chat with your matches.</p>
+            <button @click="goToConversations" class="btn-primary">View Conversations</button>
+          </div>
+          <div v-else class="coming-soon">
+            <svg width="64" height="64" fill="#DD1B45" opacity="0.3" viewBox="0 0 24 24">
+              <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/>
+            </svg>
+            <h3>No conversations yet</h3>
+            <p>Start chatting with your matches to begin conversations!</p>
           </div>
         </div>
 
@@ -105,30 +113,6 @@
 
       </div>
     </div>
-
-    <!-- Chat Modal (Basic placeholder for now) -->
-    <div v-if="selectedMatch" class="chat-modal" @click.self="closeChat">
-      <div class="chat-container">
-        <div class="chat-header">
-          <img :src="selectedMatch.user.picture" :alt="selectedMatch.user.name" class="chat-avatar" />
-          <div class="chat-header-info">
-            <h3>{{ selectedMatch.user.name }}</h3>
-            <p>Matched {{ formatDate(selectedMatch.matchDate) }}</p>
-          </div>
-          <button @click="closeChat" class="close-chat-btn">
-            <svg width="24" height="24" fill="#666" viewBox="0 0 24 24">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-            </svg>
-          </button>
-        </div>
-        <div class="chat-body">
-          <div class="chat-placeholder">
-            <p>💬 Messaging feature coming soon!</p>
-            <p>You'll be able to chat with {{ selectedMatch.user.name }} here.</p>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -143,8 +127,7 @@ export default {
       matches: [],
       conversationsCount: 0,
       isLoading: true,
-      userId: null,
-      selectedMatch: null
+      userId: null
     };
   },
   methods: {
@@ -157,28 +140,45 @@ export default {
           return;
         }
 
-        const response = await fetch(`http://localhost:3000/api/matches/${this.userId}`, {
+        // Fetch matches
+        const matchesResponse = await fetch(`http://localhost:3000/api/matches/${this.userId}`, {
           headers: {
             'Authorization': `Bearer ${this.userId}`,
             'Content-Type': 'application/json'
           }
         });
 
-        if (response.status === 401) {
+        if (matchesResponse.status === 401) {
           AuthService.logout();
           this.$router.push({ name: 'login' });
           return;
         }
 
-        if (!response.ok) {
+        if (!matchesResponse.ok) {
           throw new Error('Failed to fetch matches');
         }
 
-        const data = await response.json();
-        this.matches = data;
+        const matchesData = await matchesResponse.json();
+        this.matches = matchesData;
         
-        // Count conversations (matches with messages - placeholder for now)
-        this.conversationsCount = 0; // Will be updated when messaging is implemented
+        // Fetch conversations count
+        try {
+          const conversationsResponse = await fetch(`http://localhost:3000/api/conversations/${this.userId}`, {
+            headers: {
+              'Authorization': `Bearer ${this.userId}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (conversationsResponse.ok) {
+            const conversationsData = await conversationsResponse.json();
+            // Count conversations that have messages
+            this.conversationsCount = conversationsData.filter(c => c.hasMessages).length;
+          }
+        } catch (convErr) {
+          console.error('Error fetching conversations count:', convErr);
+          this.conversationsCount = 0;
+        }
 
       } catch (err) {
         console.error('Error fetching matches:', err);
@@ -223,13 +223,35 @@ export default {
       return bio.substring(0, 100) + '...';
     },
     
-    openChat(match) {
-      this.selectedMatch = match;
-      // In the future, this will open a real chat interface
-    },
-    
-    closeChat() {
-      this.selectedMatch = null;
+    async openChat(match) {
+      try {
+        // Get or create conversation for this match
+        const response = await fetch(`http://localhost:3000/api/matches/${match.matchId}/conversation`, {
+          headers: {
+            'Authorization': `Bearer ${this.userId}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to get conversation');
+        }
+
+        const data = await response.json();
+        
+        // Navigate to conversations page and automatically select this conversation
+        this.$router.push({ 
+          name: 'conversations',
+          query: { 
+            conversationId: data.conversationId,
+            matchId: match.matchId,
+            matchName: match.user.name
+          }
+        });
+      } catch (err) {
+        console.error('Error getting conversation:', err);
+        alert('Failed to start conversation. Please try again.');
+      }
     },
     
     goToSwipe() {
@@ -238,6 +260,10 @@ export default {
     
     goToProfile() {
       this.$router.push({ name: 'profile' });
+    },
+    
+    goToConversations() {
+      this.$router.push({ name: 'conversations' });
     },
     
     logout() {
@@ -545,6 +571,7 @@ export default {
 
 /* Coming Soon / No Matches States */
 .coming-soon,
+.conversations-preview,
 .no-matches {
   background: white;
   border-radius: 20px;
@@ -554,6 +581,7 @@ export default {
 }
 
 .coming-soon h3,
+.conversations-preview h3,
 .no-matches h2 {
   font-family: 'Poppins', sans-serif;
   font-weight: 600;
@@ -562,6 +590,7 @@ export default {
 }
 
 .coming-soon p,
+.conversations-preview p,
 .no-matches p {
   color: #666;
   margin-bottom: 2rem;
@@ -583,94 +612,6 @@ export default {
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(221, 27, 69, 0.4);
-}
-
-/* Chat Modal */
-.chat-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
-}
-
-.chat-container {
-  background: white;
-  border-radius: 20px;
-  width: 100%;
-  max-width: 600px;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-}
-
-.chat-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1.5rem;
-  border-bottom: 1px solid #e1e5e9;
-}
-
-.chat-avatar {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.chat-header-info {
-  flex: 1;
-}
-
-.chat-header-info h3 {
-  font-family: 'Poppins', sans-serif;
-  font-weight: 600;
-  color: #1F1F2E;
-  margin-bottom: 0.25rem;
-}
-
-.chat-header-info p {
-  color: #666;
-  font-size: 0.85rem;
-}
-
-.close-chat-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 50%;
-  transition: background 0.2s ease;
-}
-
-.close-chat-btn:hover {
-  background: #f8f9fa;
-}
-
-.chat-body {
-  flex: 1;
-  padding: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.chat-placeholder {
-  text-align: center;
-  color: #666;
-}
-
-.chat-placeholder p:first-child {
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
 }
 
 /* Responsive Design */

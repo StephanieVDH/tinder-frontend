@@ -74,8 +74,6 @@ export default {
         // Store user data in localStorage for persistent login
         this.login(data.user);
         
-        alert(data.message);
-        
         // Redirect based on role
         if (data.user.role === 'user') {
           this.$router.push({ name: 'swipe' });

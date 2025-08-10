@@ -1,5 +1,7 @@
 import Vue from 'vue';
 import Router from 'vue-router';
+import { AuthService } from '@/auth.js';
+
 import HomePage from '@/components/HomePage.vue';
 import RegisterPage from '@/components/RegisterPage.vue';
 import LogIn from '@/components/LogIn.vue';
@@ -7,7 +9,8 @@ import AdminPage from '@/components/AdminPage.vue';
 import SwipePage from '@/components/SwipePage.vue';
 import UserProfile from '@/components/UserProfile.vue';
 import Matches from '@/components/Matches.vue'; 
-import { AuthService } from '@/auth.js';
+import Conversations from '@/components/Conversations.vue'; 
+
 
 Vue.use(Router);
 
@@ -52,7 +55,13 @@ const router = new Router({
       name: 'matches',
       component: Matches,
       meta: { requiresAuth: true }
-    }
+    },
+    {
+      path: '/conversations',
+      name: 'conversations',
+      component: Conversations,
+      meta: { requiresAuth: true }
+    },
   ],
 });
 

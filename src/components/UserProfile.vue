@@ -32,11 +32,6 @@
                 </svg>
                 <span>Add Photo</span>
               </div>
-              <div class="upload-overlay">
-                <svg width="24" height="24" fill="white" viewBox="0 0 24 24">
-                  <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H5C3.89 1 3 1.89 3 3V21C3 22.1 3.89 23 5 23H19C20.1 23 21 22.1 21 21V9M19 9H14V4H19V9Z"/>
-                </svg>
-              </div>
             </div>
             <input type="file" ref="fileInput" @change="handleFileUpload" class="hidden-file-input" accept="image/*" />
           </div>
@@ -138,12 +133,28 @@
               <div class="preference-card">
                 <div class="form-group">
                   <label class="form-label">Interested in</label>
-                  <select v-model="preferences.GenderID" class="form-select">
-                    <option value="" disabled>Who are you looking for?</option>
-                    <option v-for="gender in genders" :key="gender.ID" :value="gender.ID">
-                      {{ gender.Name }}
-                    </option>
-                  </select>
+                  <div class="gender-checkbox-grid">
+                    <div 
+                      v-for="gender in genders" 
+                      :key="gender.ID" 
+                      class="gender-checkbox-item"
+                    >
+                      <input 
+                        type="checkbox"
+                        :id="'gender-' + gender.ID"
+                        :value="gender.ID"
+                        v-model="preferences.selectedGenders"
+                        class="gender-checkbox"
+                      />
+                      <label 
+                        :for="'gender-' + gender.ID" 
+                        class="gender-checkbox-label"
+                      >
+                        <span class="checkbox-indicator"></span>
+                        <span class="gender-name">{{ gender.Name }}</span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="age-range-group">
@@ -203,7 +214,7 @@ export default {
       profilePicture: null,
       profilePictureUrl: '',
       preferences: {
-        GenderID: null,
+        selectedGenders: [], // Changed from GenderID to selectedGenders array
         MinAge: 18,
         MaxAge: 99,
         MaxDistance: 50,
@@ -286,7 +297,12 @@ export default {
         })
         .then(data => {
           if (data) {
-            this.preferences = data;
+            this.preferences = {
+              selectedGenders: data.selectedGenders || [], // Handle array of gender IDs
+              MinAge: data.MinAge || 18,
+              MaxAge: data.MaxAge || 99,
+              MaxDistance: data.MaxDistance || 50
+            };
           }
         })
         .catch(err => {
@@ -350,7 +366,6 @@ export default {
           return res.json();
         })
         .then(() => {
-          alert('Profile updated successfully');
           this.fetchProfile();
         })
         .catch(err => {
@@ -368,7 +383,10 @@ export default {
           'Authorization': `Bearer ${this.userId}`
         },
         body: JSON.stringify({
-          ...this.preferences,
+          selectedGenders: this.preferences.selectedGenders, // Send array of gender IDs
+          MinAge: this.preferences.MinAge,
+          MaxAge: this.preferences.MaxAge,
+          MaxDistance: this.preferences.MaxDistance,
           userId: this.userId
         }),
       })
@@ -379,9 +397,6 @@ export default {
           throw new Error('Unauthorized');
         }
         return res.json();
-      })
-      .then(() => {
-        alert('Preferences updated successfully');
       })
       .catch(err => {
         if (err.message !== 'Unauthorized') {
@@ -573,20 +588,6 @@ export default {
   font-weight: 500;
 }
 
-.upload-overlay {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  background: #dd1b45;
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 3px solid white;
-}
-
 .hidden-file-input {
   display: none;
 }
@@ -761,6 +762,80 @@ export default {
   border: 2px solid rgba(84, 34, 84, 0.1);
 }
 
+/* Gender Checkbox Styles */
+.gender-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.gender-checkbox-item {
+  position: relative;
+}
+
+.gender-checkbox {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.gender-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 2px solid #e1e5e9;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+  font-weight: 500;
+  color: #1F1F2E;
+}
+
+.gender-checkbox-label:hover {
+  border-color: #dd1b45;
+  background: rgba(221, 27, 69, 0.02);
+}
+
+.gender-checkbox:checked + .gender-checkbox-label {
+  border-color: #dd1b45;
+  background: linear-gradient(135deg, rgba(221, 27, 69, 0.1), rgba(254, 116, 28, 0.1));
+  color: #dd1b45;
+}
+
+.checkbox-indicator {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e1e5e9;
+  border-radius: 4px;
+  position: relative;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.gender-checkbox:checked + .gender-checkbox-label .checkbox-indicator {
+  background: linear-gradient(135deg, #dd1b45, #f54438);
+  border-color: #dd1b45;
+}
+
+.gender-checkbox:checked + .gender-checkbox-label .checkbox-indicator::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 6px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.gender-name {
+  font-size: 0.95rem;
+}
+
 .age-range-group {
   margin: 3rem 0;
 }
@@ -888,6 +963,10 @@ export default {
     grid-template-columns: 1fr;
   }
   
+  .gender-checkbox-grid {
+    grid-template-columns: 1fr;
+  }
+  
   .range-inputs {
     flex-direction: column;
     gap: 1rem;
@@ -919,6 +998,11 @@ export default {
   
   .profile-name {
     font-size: 1.3rem;
+  }
+  
+  .gender-checkbox-label {
+    padding: 0.75rem;
+    font-size: 0.9rem;
   }
 }
 </style>
