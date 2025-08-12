@@ -51,8 +51,18 @@
           ></span>
         </div>
       </div>
-      <h2>{{ currentUser.name }}, {{ currentUser.age }}</h2>
-      <p>{{ currentUser.bio }}</p>
+      <div class="user-info">
+        <div class="name-age">
+          <h2>{{ currentUser.name }}, {{ currentUser.age }}</h2>
+          <div class="distance" v-if="currentUser.distance !== undefined">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#666">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+            <span>{{ formatDistance(currentUser.distance) }}</span>
+          </div>
+        </div>
+        <p class="bio">{{ currentUser.bio }}</p>
+      </div>
     </div>
 
     <!-- Swipe Buttons -->
@@ -100,7 +110,8 @@ export default {
       showMatchNotification: false,
       lastMatchedUser: '',
       matchCount: 0,
-      userId: null
+      userId: null,
+      userLocation: null
     };
   },
   computed: {
@@ -112,10 +123,63 @@ export default {
       if (this.currentUser.pictures && this.currentUser.pictures.length > 0) {
         return this.currentUser.pictures[this.currentPictureIndex];
       }
-      return this.currentUser.picture || 'https://via.placeholder.com/300x300?text=User';
+      return this.currentUser.picture;
     }
   },
   methods: {
+    async getUserLocation() {
+      try {
+        this.userId = AuthService.getUserId();
+        if (!this.userId) return null;
+
+        const response = await fetch(`http://localhost:3000/api/profile/${this.userId}`, {
+          headers: {
+            'Authorization': `Bearer ${this.userId}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.profile.Latitude && data.profile.Longitude) {
+            return {
+              latitude: parseFloat(data.profile.Latitude),
+              longitude: parseFloat(data.profile.Longitude)
+            };
+          }
+        }
+      } catch (error) {
+        console.error('Failed to get user location:', error);
+      }
+      return null;
+    },
+
+    calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371; // Radius of the Earth in kilometers
+      const dLat = this.deg2rad(lat2 - lat1);
+      const dLon = this.deg2rad(lon2 - lon1);
+      const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const distance = R * c; // Distance in kilometers
+      return distance;
+    },
+
+    deg2rad(deg) {
+      return deg * (Math.PI/180);
+    },
+
+    formatDistance(distance) {
+      if (distance < 1) {
+        return `${Math.round(distance * 1000)}m away`;
+      } else if (distance < 10) {
+        return `${distance.toFixed(1)}km away`;
+      } else {
+        return `${Math.round(distance)}km away`;
+      }
+    },
+
     async fetchUsers() {
       this.isLoading = true;
       try {
@@ -125,6 +189,9 @@ export default {
           this.$router.push({ name: 'login' });
           return;
         }
+
+        // Get user's location
+        this.userLocation = await this.getUserLocation();
 
         const response = await fetch(`http://localhost:3000/api/users/swipe/${this.userId}`, {
           headers: {
@@ -137,6 +204,21 @@ export default {
         }
         
         const data = await response.json();
+        
+        // Calculate distances if user location is available
+        if (this.userLocation) {
+          data.forEach(user => {
+            if (user.latitude && user.longitude) {
+              user.distance = this.calculateDistance(
+                this.userLocation.latitude,
+                this.userLocation.longitude,
+                parseFloat(user.latitude),
+                parseFloat(user.longitude)
+              );
+            }
+          });
+        }
+        
         this.users = data;
         this.currentIndex = 0;
         this.currentPictureIndex = 0;
@@ -437,7 +519,7 @@ export default {
 
 .profile-pic {
   width: 100%;
-  height: 400px;
+  height: 280px; /* Reduced from 400px */
   object-fit: cover;
   border-radius: 16px;
 }
@@ -465,18 +547,49 @@ export default {
   transform: scale(1.2);
 }
 
+.user-info {
+  text-align: left;
+}
+
+.name-age {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  gap: 10px;
+}
+
 .card h2 {
   font-family: 'Poppins', sans-serif;
   font-weight: 600;
   color: #1F1F2E;
-  margin-bottom: 8px;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
+  margin: 0;
+  flex: 1;
 }
 
-.card p {
+.distance {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: #f8f9fa;
+  padding: 4px 8px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.distance svg {
+  flex-shrink: 0;
+}
+
+.bio {
   color: #666;
   line-height: 1.5;
   font-size: 1rem;
+  margin: 0;
 }
 
 /* Buttons */
@@ -593,7 +706,17 @@ export default {
   }
   
   .profile-pic {
-    height: 350px;
+    height: 250px; /* Reduced from 350px */
+  }
+  
+  .name-age {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  
+  .distance {
+    align-self: flex-start;
   }
 }
 
@@ -620,7 +743,11 @@ export default {
   }
   
   .profile-pic {
-    height: 300px;
+    height: 220px; /* Reduced from 300px */
+  }
+  
+  .card h2 {
+    font-size: 1.2rem;
   }
 }
 </style>
