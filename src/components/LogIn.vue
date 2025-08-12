@@ -1,12 +1,12 @@
 <template>
   <div class="login-container">
     <header class="header">
-      <div class="logo">
+      <router-link to="/" class="logo">
         <div class="logo-icon">
           <img src="@/assets/logo.png" alt="Flare Logo" width="32" height="32" />
         </div>
         <span class="logo-text">Flare</span>
-      </div>
+      </router-link>
     </header>
     <section class="login-main">
       <h1>Welcome Back</h1>
@@ -129,6 +129,9 @@ export default {
   align-items: center;
   gap: 0.75rem;
   margin-left: 10rem;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
 }
 
 .logo-icon img {

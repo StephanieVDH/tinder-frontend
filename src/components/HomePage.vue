@@ -94,14 +94,15 @@ export default {
   margin: 0 auto;
   padding: 0 2rem;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  position: relative;
 }
 
 .logo {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  margin-left: -22.5rem;  /* deze afstand om te matchen met login en register */
 }
 
 .logo-icon img {
@@ -114,6 +115,10 @@ export default {
   font-weight: 700;
   font-size: 1.75rem;
   color: #FFFFFF;
+}
+
+.nav-actions {
+  margin-left: auto; /* Push login button to the right */
 }
 
 .nav-login {
@@ -131,8 +136,6 @@ export default {
   background: #dd1b45;
   color: white;
 }
-
-
 
 /* Hero Section */
 .hero {

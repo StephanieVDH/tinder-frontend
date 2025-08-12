@@ -326,6 +326,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  margin-left: -22.5rem;  /* deze afstand om te matchen met login en register */
 }
 
 .logo-icon {
@@ -612,43 +613,5 @@ export default {
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(221, 27, 69, 0.4);
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .main-content {
-    padding: 1rem;
-  }
-  
-  .page-title {
-    font-size: 1.5rem;
-  }
-  
-  .matches-grid {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1rem;
-  }
-  
-  .match-image-container {
-    height: 250px;
-  }
-}
-
-@media (max-width: 480px) {
-  .nav-container {
-    padding: 0 1rem;
-  }
-  
-  .matches-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .page-header {
-    padding: 1.5rem;
-  }
-  
-  .page-title {
-    font-size: 1.25rem;
-  }
 }
 </style>

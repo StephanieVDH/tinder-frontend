@@ -1,12 +1,12 @@
 <template>
   <div class="register-page">
     <header class="header">
-      <div class="logo">
+      <router-link to="/" class="logo">
         <div class="logo-icon">
           <img src="@/assets/logo.png" alt="Flare Logo" width="32" height="32" />
         </div>
         <span class="logo-text">Flare</span>
-      </div>
+      </router-link>
     </header>
 
     <div class="register-main">
