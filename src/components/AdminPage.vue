@@ -478,13 +478,4 @@ h2 { font-size: 1.5rem; }
 }
 
 .detail-item:hover { transform: translateY(-1px); }
-
-/* Responsive */
-@media (max-width: 768px) {
-  .admin-container { padding: 10px; }
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .search-bar, .filters { flex-direction: column; }
-  .table-header { flex-direction: column; gap: 15px; }
-  .actions { flex-wrap: wrap; }
-}
 </style>

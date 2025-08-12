@@ -10,7 +10,7 @@
           <span class="logo-text">Flare</span>
         </div>
         <div class="nav-actions">
-          <button @click="goToSwipe" class="nav-btn">Back to Swipe</button>
+          <button @click="$router.push({ name: 'swipe' })" class="nav-btn">Back to Swipe</button>
           <button @click="logout" class="nav-btn logout-btn">Logout</button>
         </div>
       </div>
@@ -19,11 +19,10 @@
     <!-- Main Content -->
     <div class="main-content">
       <div class="profile-container">
-        
-        <!-- Profile Header with Picture -->
+        <!-- Profile Header -->
         <div class="profile-header">
           <div class="profile-picture-section">
-            <div class="picture-upload-area" @click="triggerFileInput">
+            <div class="picture-upload-area" @click="$refs.fileInput.click()">
               <img v-if="profilePictureUrl" :src="profilePictureUrl" alt="Profile Picture" class="profile-image" />
               <div v-else class="placeholder-image">
                 <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
@@ -35,7 +34,6 @@
             </div>
             <input type="file" ref="fileInput" @change="handleFileUpload" class="hidden-file-input" accept="image/*" />
           </div>
-          
           <div class="profile-header-info">
             <h1 class="profile-name">{{ profile.Username || 'Your Name' }}</h1>
             <p class="profile-age">{{ calculateAge(profile.DateOfBirth) }} years old</p>
@@ -45,24 +43,18 @@
         <!-- Profile Tabs -->
         <div class="profile-tabs">
           <button 
-            @click="activeTab = 'about'" 
-            :class="['tab-btn', { active: activeTab === 'about' }]"
+            v-for="tab in ['about', 'preferences']"
+            :key="tab"
+            @click="activeTab = tab" 
+            :class="['tab-btn', { active: activeTab === tab }]"
           >
-            About Me
-          </button>
-          <button 
-            @click="activeTab = 'preferences'" 
-            :class="['tab-btn', { active: activeTab === 'preferences' }]"
-          >
-            Preferences
+            {{ tab === 'about' ? 'About Me' : 'Preferences' }}
           </button>
         </div>
 
         <!-- About Me Tab -->
         <div v-if="activeTab === 'about'" class="tab-content">
           <form @submit.prevent="updateProfile" class="profile-form">
-            
-            <!-- Bio Section -->
             <div class="form-section bio-section">
               <h3 class="section-title">
                 <svg width="20" height="20" fill="#DD1B45" viewBox="0 0 24 24">
@@ -79,7 +71,6 @@
               <div class="char-count">{{ (profile.Bio || '').length }}/500</div>
             </div>
 
-            <!-- Personal Details -->
             <div class="form-section">
               <h3 class="section-title">
                 <svg width="20" height="20" fill="#DD1B45" viewBox="0 0 24 24">
@@ -98,7 +89,6 @@
                     </option>
                   </select>
                 </div>
-
                 <div class="form-group phone-group">
                   <label class="form-label">Phone Number</label>
                   <input v-model="profile.PhoneNumber" type="text" class="form-input" placeholder="+1 (555) 123-4567" />
@@ -111,17 +101,13 @@
                 <small class="form-hint">Email cannot be changed</small>
               </div>
             </div>
-
-            <button type="submit" class="btn btn-primary">
-              Save Profile
-            </button>
+            <button type="submit" class="btn btn-primary">Save Profile</button>
           </form>
         </div>
 
         <!-- Preferences Tab -->
         <div v-if="activeTab === 'preferences'" class="tab-content">
           <form @submit.prevent="updatePreferences" class="preferences-form">
-            
             <div class="form-section">
               <h3 class="section-title">
                 <svg width="20" height="20" fill="#DD1B45" viewBox="0 0 24 24">
@@ -134,11 +120,7 @@
                 <div class="form-group">
                   <label class="form-label">Interested in</label>
                   <div class="gender-checkbox-grid">
-                    <div 
-                      v-for="gender in genders" 
-                      :key="gender.ID" 
-                      class="gender-checkbox-item"
-                    >
+                    <div v-for="gender in genders" :key="gender.ID" class="gender-checkbox-item">
                       <input 
                         type="checkbox"
                         :id="'gender-' + gender.ID"
@@ -146,10 +128,7 @@
                         v-model="preferences.selectedGenders"
                         class="gender-checkbox"
                       />
-                      <label 
-                        :for="'gender-' + gender.ID" 
-                        class="gender-checkbox-label"
-                      >
+                      <label :for="'gender-' + gender.ID" class="gender-checkbox-label">
                         <span class="checkbox-indicator"></span>
                         <span class="gender-name">{{ gender.Name }}</span>
                       </label>
@@ -181,13 +160,9 @@
                 </div>
               </div>
             </div>
-
-            <button type="submit" class="btn btn-secondary">
-              Save Preferences
-            </button>
+            <button type="submit" class="btn btn-secondary">Save Preferences</button>
           </form>
         </div>
-
       </div>
     </div>
   </div>
@@ -196,136 +171,111 @@
 <script>
 import { AuthService } from '@/auth.js';
 
+const API_BASE = 'http://localhost:3000/api';
+
 export default {
   name: 'ProfilePage',
-  data() {
-    return {
-      activeTab: 'about',
-      userId: null,
-      profile: {
-        Username: '',
-        DateOfBirth: '',
-        Email: '',
-        PhoneNumber: '',
-        Bio: '',
-        GenderID: null,
-      },
-      genders: [],
-      profilePicture: null,
-      profilePictureUrl: '',
-      preferences: {
-        selectedGenders: [], // Changed from GenderID to selectedGenders array
-        MinAge: 18,
-        MaxAge: 99,
-        MaxDistance: 50,
-      },
-    };
+  data: () => ({
+    activeTab: 'about',
+    userId: null,
+    profile: { Username: '', DateOfBirth: '', Email: '', PhoneNumber: '', Bio: '', GenderID: null },
+    genders: [],
+    profilePicture: null,
+    profilePictureUrl: '',
+    preferences: { selectedGenders: [], MinAge: 18, MaxAge: 99, MaxDistance: 50 }
+  }),
+  
+  async mounted() {
+    if (this.checkAuth()) await this.fetchProfile();
   },
+  
+  beforeRouteEnter(to, from, next) {
+    AuthService.isLoggedIn() ? next() : next({ name: 'login' });
+  },
+  
   methods: {
     checkAuth() {
-      // Check if user is logged in
       if (!AuthService.isLoggedIn()) {
         this.$router.push({ name: 'login' });
         return false;
       }
-      
-      // Get user ID from auth service
       this.userId = AuthService.getUserId();
       if (!this.userId) {
         console.error('No user ID found');
         this.$router.push({ name: 'login' });
         return false;
       }
-      
       return true;
     },
-    fetchProfile() {
-      // Include user ID in the API call
-      fetch(`http://localhost:3000/api/profile/${this.userId}`, {
-        headers: {
-          'Authorization': `Bearer ${this.userId}`, // Include auth header
-          'Content-Type': 'application/json'
-        }
-      })
-        .then(res => {
-          if (res.status === 401) {
-            // Unauthorized - redirect to login
-            AuthService.logout();
-            this.$router.push({ name: 'login' });
-            throw new Error('Unauthorized');
-          }
-          return res.json();
-        })
-        .then(data => {
-          this.profile = data.profile;
-          this.profilePictureUrl = data.profilePictureUrl;
-        })
-        .catch(err => {
-          if (err.message !== 'Unauthorized') {
-            console.error('Error fetching profile:', err);
-          }
-        });
-
-      // Fetch genders
-      fetch('http://localhost:3000/api/genders', {
-        headers: {
-          'Authorization': `Bearer ${this.userId}`
-        }
-      })
-        .then(res => res.json())
-        .then(data => {
-          this.genders = data;
-        })
-        .catch(err => console.error('Error fetching genders:', err));
-
-      this.fetchPreferences();
-    },
-    fetchPreferences() {
-      fetch(`http://localhost:3000/api/preferences/${this.userId}`, {
+    
+    async apiCall(endpoint, options = {}) {
+      const config = {
         headers: {
           'Authorization': `Bearer ${this.userId}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...options.headers
+        },
+        ...options
+      };
+      
+      const response = await fetch(`${API_BASE}${endpoint}`, config);
+      
+      if (response.status === 401) {
+        AuthService.logout();
+        this.$router.push({ name: 'login' });
+        throw new Error('Unauthorized');
+      }
+      
+      return response.json();
+    },
+    
+    async fetchProfile() {
+      try {
+        const [profileData, gendersData] = await Promise.all([
+          this.apiCall(`/profile/${this.userId}`),
+          this.apiCall('/genders')
+        ]);
+        
+        this.profile = profileData.profile;
+        this.profilePictureUrl = profileData.profilePictureUrl;
+        this.genders = gendersData;
+        
+        await this.fetchPreferences();
+      } catch (err) {
+        if (err.message !== 'Unauthorized') {
+          console.error('Error fetching profile:', err);
         }
-      })
-        .then(res => {
-          if (res.status === 401) {
-            AuthService.logout();
-            this.$router.push({ name: 'Login' });
-            throw new Error('Unauthorized');
-          }
-          return res.json();
-        })
-        .then(data => {
-          if (data) {
-            this.preferences = {
-              selectedGenders: data.selectedGenders || [], // Handle array of gender IDs
-              MinAge: data.MinAge || 18,
-              MaxAge: data.MaxAge || 99,
-              MaxDistance: data.MaxDistance || 50
-            };
-          }
-        })
-        .catch(err => {
-          if (err.message !== 'Unauthorized') {
-            console.error('Error fetching preferences:', err);
-          }
-        });
+      }
     },
-    triggerFileInput() {
-      this.$refs.fileInput.click();
+    
+    async fetchPreferences() {
+      try {
+        const data = await this.apiCall(`/preferences/${this.userId}`);
+        if (data) {
+          this.preferences = {
+            selectedGenders: data.selectedGenders || [],
+            MinAge: data.MinAge || 18,
+            MaxAge: data.MaxAge || 99,
+            MaxDistance: data.MaxDistance || 50
+          };
+        }
+      } catch (err) {
+        if (err.message !== 'Unauthorized') {
+          console.error('Error fetching preferences:', err);
+        }
+      }
     },
+    
     handleFileUpload(event) {
       const file = event.target.files[0];
       if (file) {
         this.profilePicture = file;
-        // Create preview URL
         const reader = new FileReader();
-        reader.onload = (e) => {
-          this.profilePictureUrl = e.target.result;
-        };
+        reader.onload = (e) => this.profilePictureUrl = e.target.result;
         reader.readAsDataURL(file);
       }
     },
+    
     calculateAge(dateOfBirth) {
       if (!dateOfBirth) return '';
       const today = new Date();
@@ -337,97 +287,58 @@ export default {
       }
       return age;
     },
-    updateProfile() {
-      const formData = new FormData();
-      // Include user ID
-      formData.append('userId', this.userId);
-      // Only include editable fields in the update
-      formData.append('Bio', this.profile.Bio || '');
-      formData.append('GenderID', this.profile.GenderID || '');
-      formData.append('PhoneNumber', this.profile.PhoneNumber || '');
-      
-      if (this.profilePicture) {
-        formData.append('profilePicture', this.profilePicture);
-      }
-
-      fetch(`http://localhost:3000/api/profile/${this.userId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${this.userId}`
-        },
-        body: formData,
-      })
-        .then(res => {
-          if (res.status === 401) {
-            AuthService.logout();
-            this.$router.push({ name: 'Login' });
-            throw new Error('Unauthorized');
-          }
-          return res.json();
-        })
-        .then(() => {
-          this.fetchProfile();
-        })
-        .catch(err => {
-          if (err.message !== 'Unauthorized') {
-            console.error('Error updating profile:', err);
-            alert('Failed to update profile');
-          }
-        });
-    },
-    updatePreferences() {
-      fetch(`http://localhost:3000/api/preferences/${this.userId}`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.userId}`
-        },
-        body: JSON.stringify({
-          selectedGenders: this.preferences.selectedGenders, // Send array of gender IDs
-          MinAge: this.preferences.MinAge,
-          MaxAge: this.preferences.MaxAge,
-          MaxDistance: this.preferences.MaxDistance,
-          userId: this.userId
-        }),
-      })
-      .then(res => {
-        if (res.status === 401) {
-          AuthService.logout();
-          this.$router.push({ name: 'Login' });
-          throw new Error('Unauthorized');
+    
+    async updateProfile() {
+      try {
+        const formData = new FormData();
+        formData.append('userId', this.userId);
+        formData.append('Bio', this.profile.Bio || '');
+        formData.append('GenderID', this.profile.GenderID || '');
+        formData.append('PhoneNumber', this.profile.PhoneNumber || '');
+        
+        if (this.profilePicture) {
+          formData.append('profilePicture', this.profilePicture);
         }
-        return res.json();
-      })
-      .catch(err => {
+
+        await fetch(`${API_BASE}/profile/${this.userId}`, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${this.userId}` },
+          body: formData,
+        });
+        
+        await this.fetchProfile();
+      } catch (err) {
+        if (err.message !== 'Unauthorized') {
+          console.error('Error updating profile:', err);
+          alert('Failed to update profile');
+        }
+      }
+    },
+    
+    async updatePreferences() {
+      try {
+        await this.apiCall(`/preferences/${this.userId}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            selectedGenders: this.preferences.selectedGenders,
+            MinAge: this.preferences.MinAge,
+            MaxAge: this.preferences.MaxAge,
+            MaxDistance: this.preferences.MaxDistance,
+            userId: this.userId
+          })
+        });
+      } catch (err) {
         if (err.message !== 'Unauthorized') {
           console.error('Error updating preferences:', err);
           alert('Failed to update preferences');
         }
-      });
+      }
     },
-    goToSwipe() {
-      this.$router.push({ name: 'swipe' });
-    },
+    
     logout() {
-      // Use AuthService to logout
       AuthService.logout();
       console.log('Logged out');
       this.$router.push({ name: 'login' });
-    },
-  },
-  mounted() {
-    // Check authentication before loading profile
-    if (this.checkAuth()) {
-      this.fetchProfile();
-    }
-  },
-  // Add navigation guard
-  beforeRouteEnter(to, from, next) {
-    // Check if user is authenticated before entering the route
-    if (!AuthService.isLoggedIn()) {
-      next({ name: 'login' });
-    } else {
-      next();
     }
   }
 };
@@ -435,11 +346,7 @@ export default {
 
 <style scoped>
 /* Global Styles */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 .page-container {
   background: #fef4e9;
@@ -447,7 +354,7 @@ export default {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* Header (same as other pages) */
+/* Header */
 .header {
   background: #542254;
   padding: 1rem 0;
@@ -705,7 +612,6 @@ export default {
   flex-direction: column;
 }
 
-/* Specific spacing adjustments */
 .phone-group {
   margin-bottom: 2rem;
 }
@@ -714,7 +620,6 @@ export default {
   margin-top: 1rem;
 }
 
-/* Gender select styling */
 .gender-select {
   padding: 1rem;
   font-size: 1.05rem;
@@ -754,7 +659,7 @@ export default {
   margin-top: 0.25rem;
 }
 
-/* Preferences Specific */
+/* Preferences */
 .preference-card {
   background: linear-gradient(135deg, rgba(84, 34, 84, 0.05), rgba(221, 27, 69, 0.05));
   border-radius: 16px;
@@ -762,7 +667,6 @@ export default {
   border: 2px solid rgba(84, 34, 84, 0.1);
 }
 
-/* Gender Checkbox Styles */
 .gender-checkbox-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -845,13 +749,13 @@ export default {
   align-items: center;
   gap: 1rem; 
   margin-top: 1.5rem;
-  max-width: 150px; /* Constrain width to keep inputs closer */
+  max-width: 150px;
 }
 
 .range-input {
   flex: 1;
   position: relative;
-  max-width: 150px; /* Limit individual input width */
+  max-width: 150px;
 }
 
 .range-label {
@@ -941,68 +845,5 @@ export default {
 .btn-secondary:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(84, 34, 84, 0.4);
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .main-content {
-    padding: 1rem;
-  }
-  
-  .profile-header {
-    flex-direction: column;
-    text-align: center;
-    gap: 1rem;
-  }
-  
-  .profile-name {
-    font-size: 1.5rem;
-  }
-  
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .gender-checkbox-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .range-inputs {
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .range-separator {
-    display: none;
-  }
-  
-  .distance-input {
-    flex-direction: column;
-    align-items: stretch;
-  }
-}
-
-@media (max-width: 480px) {
-  .nav-container {
-    padding: 0 1rem;
-  }
-  
-  .tab-content {
-    padding: 1.5rem;
-  }
-  
-  .picture-upload-area {
-    width: 100px;
-    height: 100px;
-  }
-  
-  .profile-name {
-    font-size: 1.3rem;
-  }
-  
-  .gender-checkbox-label {
-    padding: 0.75rem;
-    font-size: 0.9rem;
-  }
 }
 </style>

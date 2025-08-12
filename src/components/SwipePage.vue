@@ -1,30 +1,20 @@
 <template>
   <div class="page-container">
-    <!-- Header Navigation (matching homepage) -->
-    <header class="header">
-      <div class="nav-container">
-        <div class="logo">
-          <div class="logo-icon">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <path d="M16 28C22.6274 28 28 22.6274 28 16C28 9.37258 22.6274 4 16 4C9.37258 4 4 9.37258 4 16C4 22.6274 9.37258 28 16 28Z" fill="url(#heartGradient)"/>
-              <path d="M12 14C12 12.8954 12.8954 12 14 12C15.1046 12 16 12.8954 16 14V16H18C19.1046 16 20 16.8954 20 18C20 19.1046 19.1046 20 18 20H14C12.8954 20 12 19.1046 12 18V14Z" fill="white"/>
-              <defs>
-                <linearGradient id="heartGradient" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#D7263D"/>
-                  <stop offset="1" stop-color="#FFB400"/>
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-          <span class="logo-text">Flare</span>
+  <header class="header">
+    <div class="nav-container">
+      <div class="logo">
+        <div class="logo-icon">
+          <img src="@/assets/logo.png" alt="Flare Logo" width="32" height="32" />
         </div>
-        <div class="nav-actions">
-          <button @click="goToProfile" class="nav-btn">Profile</button>
-          <button @click="goToMatches" class="nav-btn">Matches ({{ matchCount }})</button>
-          <button @click="logout" class="nav-btn logout-btn">Logout</button>
-        </div>
+        <span class="logo-text">Flare</span>
       </div>
-    </header>
+      <div class="nav-actions">
+        <button @click="goToProfile" class="nav-btn">Profile</button>
+        <button @click="goToMatches" class="nav-btn">Matches ({{ matchCount }})</button>
+        <button @click="logout" class="nav-btn logout-btn">Logout</button>
+      </div>
+    </div>
+  </header>
 
     <!-- Instruction Text -->
     <p class="instruction-text">Swipe to match</p>
@@ -680,74 +670,5 @@ export default {
 .refresh-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(221, 27, 69, 0.3);
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .nav-container {
-    padding: 0 1rem;
-  }
-  
-  .logo-text {
-    font-size: 1.5rem;
-  }
-  
-  .nav-actions {
-    gap: 0.5rem;
-  }
-  
-  .nav-btn {
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
-  }
-  
-  .card {
-    max-width: 320px;
-  }
-  
-  .profile-pic {
-    height: 250px; /* Reduced from 350px */
-  }
-  
-  .name-age {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
-  }
-  
-  .distance {
-    align-self: flex-start;
-  }
-}
-
-@media (max-width: 480px) {
-  .nav-container {
-    padding: 0 0.75rem;
-  }
-  
-  .logo-text {
-    font-size: 1.25rem;
-  }
-  
-  .nav-btn {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.85rem;
-  }
-  
-  .instruction-text {
-    font-size: 18px;
-  }
-  
-  .card {
-    max-width: 280px;
-  }
-  
-  .profile-pic {
-    height: 220px; /* Reduced from 300px */
-  }
-  
-  .card h2 {
-    font-size: 1.2rem;
-  }
 }
 </style>

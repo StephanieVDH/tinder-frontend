@@ -1,6 +1,5 @@
 <template>
   <div class="page-container">
-    <!-- Header Navigation -->
     <header class="header">
       <div class="nav-container">
         <div class="logo">
@@ -955,78 +954,5 @@ export default {
   font-weight: 600;
   color: #1F1F2E;
   margin: 1rem 0 0.5rem;
-}
-
-/* Mobile Styles */
-.mobile-hidden {
-  display: none !important;
-}
-
-@media (max-width: 768px) {
-  .nav-actions {
-    gap: 0.5rem;
-  }
-  
-  .nav-btn {
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
-  }
-  
-  .chat-container {
-    margin: 0;
-    border-radius: 0;
-  }
-  
-  .conversations-sidebar {
-    width: 100%;
-    border-right: none;
-  }
-  
-  .conversations-sidebar.mobile-hidden {
-    display: none;
-  }
-  
-  .chat-area {
-    width: 100%;
-  }
-  
-  .message {
-    max-width: 85%;
-  }
-  
-  .no-conversation-selected {
-    display: none;
-  }
-}
-
-@media (max-width: 480px) {
-  .nav-container {
-    padding: 0 1rem;
-  }
-  
-  .logo-text {
-    font-size: 1.25rem;
-  }
-  
-  .nav-btn {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.85rem;
-  }
-  
-  .sidebar-header {
-    padding: 1rem;
-  }
-  
-  .conversation-item {
-    padding: 0.875rem 1rem;
-  }
-  
-  .messages-area {
-    padding: 1rem;
-  }
-  
-  .message-input-container {
-    padding: 0.75rem 1rem;
-  }
 }
 </style>
