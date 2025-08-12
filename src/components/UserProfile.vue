@@ -338,7 +338,7 @@ export default {
     logout() {
       AuthService.logout();
       console.log('Logged out');
-      this.$router.push({ name: 'login' });
+      this.$router.push({ name: 'home' });
     }
   }
 };

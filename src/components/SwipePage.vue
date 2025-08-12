@@ -306,7 +306,7 @@ export default {
     
     logout() {
       AuthService.logout();
-      this.$router.push({ name: 'login' });
+      this.$router.push({ name: 'home' });
     },
     
     goToProfile() {

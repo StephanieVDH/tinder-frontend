@@ -28,7 +28,7 @@
         <div class="hero-buttons">
           <router-link to="/register" class="btn">Get Started</router-link>
         </div>
-        <button @click="goToAdmin" style="background-color: #dd1b45; color: white; padding: 10px 20px; border: none; border-radius: 8px; margin-top: 20px;">PROFILE PAGE TEST</button>
+        <button @click="$router.push('/profile')" class="test-btn">PROFILE PAGE TEST</button>
       </div>
     </section>
 
@@ -38,35 +38,10 @@
         <h2 class="section-title">How it works</h2>
         
         <div class="features-grid">
-          <div class="feature-card">
-            <div class="feature-icon heart-icon">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                <path d="M34.6 8.4C31.2 8.4 28.2 10.2 26.4 12.6L24 15.6L21.6 12.6C19.8 10.2 16.8 8.4 13.4 8.4C8.4 8.4 4.8 12.6 4.8 17.4C4.8 23.4 11.4 29.4 24 39.6C36.6 29.4 43.2 23.4 43.2 17.4C43.2 12.6 39.6 8.4 34.6 8.4Z" fill="#D7263D"/>
-              </svg>
-            </div>
-            <h3>Swipe & Match</h3>
-            <p>Swipe right to like, left to pass—mutual interest unlocks conversation.</p>
-          </div>
-
-          <div class="feature-card">
-            <div class="feature-icon chat-icon">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                <path d="M40 8H8C5.8 8 4 9.8 4 12V28C4 30.2 5.8 32 8 32H12V40L20 32H40C42.2 32 44 30.2 44 28V12C44 9.8 42.2 8 40 8Z" fill="#FFB400"/>
-              </svg>
-            </div>
-            <h3>Chat Instantly</h3>
-            <p>Real-time, lightweight messaging once you've made a match.</p>
-          </div>
-
-          <div class="feature-card">
-            <div class="feature-icon profile-icon">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                <circle cx="24" cy="16" r="8" fill="#D7263D"/>
-                <path d="M24 28C16 28 8 32 8 36V40H40V36C40 32 32 28 24 28Z" fill="#D7263D"/>
-              </svg>
-            </div>
-            <h3>Customize Profile</h3>
-            <p>Add photos, preferences, and polish your presence to stand out.</p>
+          <div v-for="feature in features" :key="feature.title" class="feature-card">
+            <div :class="['feature-icon', feature.iconClass]" v-html="feature.icon"></div>
+            <h3>{{ feature.title }}</h3>
+            <p>{{ feature.description }}</p>
           </div>
         </div>
       </div>
@@ -76,23 +51,35 @@
 
 <script>
 export default {
-  name: 'HomePage', 
-  //Admin weghalen na test (vergeet de komma na 'HomePage' niet!)
-  methods: { // dit weghalen na test
-    goToAdmin() { // dit weghalen na test
-      this.$router.push('/profile'); // dit weghalen na test
-    } // dit weghalen na test
-  } // dit weghalen na test
+  name: 'HomePage',
+  data: () => ({
+    features: [
+      {
+        title: 'Swipe & Match',
+        description: 'Swipe right to like, left to pass—mutual interest unlocks conversation.',
+        iconClass: 'heart-icon',
+        icon: '<svg width="48" height="48" viewBox="0 0 48 48" fill="none"><path d="M34.6 8.4C31.2 8.4 28.2 10.2 26.4 12.6L24 15.6L21.6 12.6C19.8 10.2 16.8 8.4 13.4 8.4C8.4 8.4 4.8 12.6 4.8 17.4C4.8 23.4 11.4 29.4 24 39.6C36.6 29.4 43.2 23.4 43.2 17.4C43.2 12.6 39.6 8.4 34.6 8.4Z" fill="#D7263D"/></svg>'
+      },
+      {
+        title: 'Chat Instantly',
+        description: 'Real-time, lightweight messaging once you\'ve made a match.',
+        iconClass: 'chat-icon',
+        icon: '<svg width="48" height="48" viewBox="0 0 48 48" fill="none"><path d="M40 8H8C5.8 8 4 9.8 4 12V28C4 30.2 5.8 32 8 32H12V40L20 32H40C42.2 32 44 30.2 44 28V12C44 9.8 42.2 8 40 8Z" fill="#FFB400"/></svg>'
+      },
+      {
+        title: 'Customize Profile',
+        description: 'Add photos, preferences, and polish your presence to stand out.',
+        iconClass: 'profile-icon',
+        icon: '<svg width="48" height="48" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="16" r="8" fill="#D7263D"/><path d="M24 28C16 28 8 32 8 36V40H40V36C40 32 32 28 24 28Z" fill="#D7263D"/></svg>'
+      }
+    ]
+  })
 }
 </script>
 
 <style scoped>
 /* Global Styles */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 #homepage {
   min-height: 100vh;
@@ -232,6 +219,22 @@ export default {
   transform: translateY(-1px);
 }
 
+.test-btn {
+  background-color: #dd1b45;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  margin-top: 20px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.test-btn:hover {
+  background-color: #c41539;
+}
+
 /* How It Works Section */
 .how-it-works {
   background: #fef4e9;
@@ -288,17 +291,9 @@ export default {
   margin-right: auto;
 }
 
-.heart-icon {
-  background: rgba(215, 38, 61, 0.1);
-}
-
-.chat-icon {
-  background: rgba(255, 180, 0, 0.1);
-}
-
-.profile-icon {
-  background: rgba(215, 38, 61, 0.1);
-}
+.heart-icon { background: rgba(215, 38, 61, 0.1); }
+.chat-icon { background: rgba(255, 180, 0, 0.1); }
+.profile-icon { background: rgba(215, 38, 61, 0.1); }
 
 .feature-card h3 {
   font-family: 'Poppins', sans-serif;
@@ -313,69 +308,4 @@ export default {
   line-height: 1.5;
   font-size: 0.95rem;
 }
-
-/* Responsive Design */
-@media (max-width: 1024px) {
-  .features-grid {
-    max-width: 600px;
-  }
-}
-
-@media (max-width: 768px) {
-  .menu-toggle {
-    display: flex;
-  }
-  
-  .nav-login {
-    display: none;
-  }
-  
-  .hero {
-    padding: 3rem 1.5rem 4rem;
-  }
-  
-  .hero-buttons {
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-  }
-  
-  .btn {
-    width: 100%;
-    max-width: 280px;
-  }
-  
-  .features-grid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-    max-width: 400px;
-  }
-  
-  .section-title {
-    font-size: 1.8rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .nav-container {
-    padding: 0 1rem;
-  }
-  
-  .hero {
-    padding: 2.5rem 1rem 3rem;
-  }
-  
-  .how-it-works {
-    padding: 3rem 1rem 2rem;
-  }
-  
-  .hero h1 {
-    font-size: 2.5rem;
-  }
-  
-  .hero p {
-    font-size: 1.1rem;
-  }
-}
 </style>
-
