@@ -1,14 +1,11 @@
 <template>
   <div class="register-page">
-    <!-- Header Navigation -->
     <header class="header">
-      <div class="nav-container">
-        <div class="logo">
-          <div class="logo-icon">
-            <img src="@/assets/logo.png" alt="Flare Logo" width="32" height="32" />
-          </div>
-          <span class="logo-text">Flare</span>
+      <div class="logo">
+        <div class="logo-icon">
+          <img src="@/assets/logo.png" alt="Flare Logo" width="32" height="32" />
         </div>
+        <span class="logo-text">Flare</span>
       </div>
     </header>
 
@@ -54,6 +51,7 @@
                 <input id="confirmPassword" v-model="confirmPassword" type="password" minlength="8" required />
               </div>
 
+              <!-- profile picture section -->
               <div class="form-group full-width">
                 <label for="profilePicture">Add Profile Picture</label>
                 <div class="picture-upload-container">
@@ -80,16 +78,15 @@
                   </label>
                 </div>
               </div>
-
               <button type="submit" class="full-width btn-primary">Register</button>
             </div>
           </form>
           
+        </div>
           <p class="login-link">
             Already have an account? 
             <router-link to="/login">Log in</router-link>
           </p>
-        </div>
       </div>
     </div>
   </div>
@@ -183,24 +180,16 @@ export default {
 /* Header */
 .header {
   background: #542254;
-  padding: 1rem 0;
+  padding: 1rem 2rem;
   position: relative;
   z-index: 100;
-}
-
-.nav-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .logo {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  margin-left: 10rem;
 }
 
 .logo-icon img {
@@ -225,6 +214,7 @@ export default {
 }
 
 .register-content {
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -246,7 +236,7 @@ export default {
   border-radius: 12px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
   width: 100%;
-  max-width: 520px;
+  max-width: 450px;
 }
 
 .form-grid {
@@ -367,16 +357,15 @@ select:focus {
   opacity: 1;
 }
 
-/* Login link styling */
 .login-link {
   text-align: center;
   margin-top: 1.5rem;
-  color: #666;
   font-size: 0.9rem;
+  font-family: 'Arial', sans-serif;
 }
 
 .login-link a {
-  color: #dd1b45;
+  color: #f54438;
   text-decoration: none;
   font-weight: bold;
 }

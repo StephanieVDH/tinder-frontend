@@ -1,13 +1,11 @@
 <template>
   <div class="login-container">
     <header class="header">
-      <div class="nav-container">
-        <div class="logo">
-          <div class="logo-icon">
-            <img src="@/assets/logo.png" alt="Flare Logo" width="32" height="32" />
-          </div>
-          <span class="logo-text">Flare</span>
+      <div class="logo">
+        <div class="logo-icon">
+          <img src="@/assets/logo.png" alt="Flare Logo" width="32" height="32" />
         </div>
+        <span class="logo-text">Flare</span>
       </div>
     </header>
     <section class="login-main">
@@ -121,24 +119,16 @@ export default {
 
 .header {
   background: #542254;
-  padding: 1rem 0;
+  padding: 1rem 2rem;
   position: relative;
   z-index: 100;
-}
-
-.nav-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .logo {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  margin-left: 10rem;
 }
 
 .logo-icon img {
