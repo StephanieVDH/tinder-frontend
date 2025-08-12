@@ -29,9 +29,11 @@
     </div>
 
     <!-- Swipe Card -->
-    <div class="card" v-if="currentUser">
+    <div class="card" v-if="currentUser" :class="{ 'verified': currentUser.verified }">
       <div class="picture-container">
         <img :src="currentPicture" alt="Profile Picture" class="profile-pic" />
+        <!-- Verification border overlay for verified users -->
+        <div v-if="currentUser.verified" class="verification-border"></div>
         <div class="picture-dots" v-if="currentUser.pictures && currentUser.pictures.length > 1">
           <span 
             v-for="(pic, index) in currentUser.pictures" 
@@ -43,7 +45,16 @@
       </div>
       <div class="user-info">
         <div class="name-age">
-          <h2>{{ currentUser.name }}, {{ currentUser.age }}</h2>
+          <div class="name-container">
+            <h2>{{ currentUser.name }}</h2>
+            <!-- Verification badge -->
+            <div v-if="currentUser.verified" class="verification-badge">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+              </svg>
+            </div>
+            <span class="age">, {{ currentUser.age }}</span>
+          </div>
           <div class="distance" v-if="currentUser.distance !== undefined">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="#666">
               <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
@@ -502,6 +513,18 @@ export default {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
+/* Enhanced styling for verified users */
+.card.verified {
+  background: linear-gradient(145deg, #ffffff 0%, #f8f9ff 100%);
+  border: 2px solid #FFD700;
+  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.2), 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.card.verified:hover {
+  box-shadow: 0 6px 24px rgba(255, 215, 0, 0.3), 0 12px 48px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+}
+
 .picture-container {
   position: relative;
   margin-bottom: 15px;
@@ -509,9 +532,22 @@ export default {
 
 .profile-pic {
   width: 100%;
-  height: 280px; /* Reduced from 400px */
+  height: 280px;
   object-fit: cover;
   border-radius: 16px;
+}
+
+/* Verification border overlay */
+.verification-border {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 3px solid #FFD700;
+  border-radius: 16px;
+  box-shadow: inset 0 0 0 2px white, 0 0 15px rgba(255, 215, 0, 0.4);
+  pointer-events: none;
 }
 
 .picture-dots {
@@ -549,13 +585,49 @@ export default {
   gap: 10px;
 }
 
+.name-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
 .card h2 {
   font-family: 'Poppins', sans-serif;
   font-weight: 600;
   color: #1F1F2E;
   font-size: 1.4rem;
   margin: 0;
-  flex: 1;
+}
+
+/* Special styling for verified user names */
+.card.verified h2 {
+  color: #B8860B;
+  font-weight: 700;
+}
+
+.age {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  color: #1F1F2E;
+  font-size: 1.4rem;
+}
+
+.card.verified .age {
+  color: #B8860B;
+}
+
+/* Verification badge */
+.verification-badge {
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(45deg, #FFD700, #FFA500);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+  flex-shrink: 0;
 }
 
 .distance {

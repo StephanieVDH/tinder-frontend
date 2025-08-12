@@ -2,7 +2,10 @@
   <div class="admin-container">
     <!-- Header with Stats -->
     <div class="card">
-      <h1>Admin Dashboard</h1>
+      <div class="header-section">
+        <h1>Admin Dashboard</h1>
+        <button @click="logout" class="btn logout">Log Out</button>
+      </div>
       <div class="stats-grid">
         <div class="stat-card" v-for="(stat, key) in stats" :key="key">
           <span class="stat-number">{{ stat.value }}</span>
@@ -38,7 +41,6 @@
     <div class="card">
       <div class="table-header">
         <h2>User Management</h2>
-        <button @click="refreshData" class="btn primary">🔄 Refresh</button>
       </div>
       
       <div class="table-wrapper">
@@ -49,15 +51,13 @@
               <th @click="sortBy('ID')" class="sortable">ID {{ getSortIcon('ID') }}</th>
               <th @click="sortBy('Username')" class="sortable">Name {{ getSortIcon('Username') }}</th>
               <th @click="sortBy('Email')" class="sortable">Email {{ getSortIcon('Email') }}</th>
-              <th>Role</th>
               <th>Status</th>
-              <th @click="sortBy('CreatedAt')" class="sortable">Joined {{ getSortIcon('CreatedAt') }}</th>
-              <th>Actions</th>
+              <th style="text-align: center;">Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="user in filteredUsers" :key="user.ID" class="user-row">
-              <td><img :src="getUserAvatar(user.ID)" class="avatar" @error="handleImageError"></td>
+              <td><img :src="getUserAvatar(user.ID)" class="avatar"></td>
               <td>{{ user.ID }}</td>
               <td>
                 <div class="user-info">
@@ -66,15 +66,13 @@
                 </div>
               </td>
               <td>{{ user.Email }}</td>
-              <td><span :class="['badge', 'role', user.Role]">{{ user.Role.toUpperCase() }}</span></td>
               <td><span :class="['badge', 'status', user.Active ? 'active' : 'banned']">{{ user.Active ? 'Active' : 'Banned' }}</span></td>
-              <td>{{ formatDate(user.CreatedAt) }}</td>
               <td>
                 <div class="actions">
-                  <button @click="toggleBan(user)" :class="['action-btn', user.Active ? 'ban' : 'unban']" :title="user.Active ? 'Ban' : 'Unban'">{{ user.Active ? '🚫' : '✅' }}</button>
-                  <button @click="toggleVerify(user)" :class="['action-btn', user.Verified ? 'unverify' : 'verify']" :title="user.Verified ? 'Unverify' : 'Verify'">{{ user.Verified ? '❌' : '✓' }}</button>
-                  <button @click="viewUserDetails(user)" class="action-btn view" title="View">👁️</button>
-                  <button @click="confirmDelete(user)" class="action-btn delete" title="Delete">🗑️</button>
+                  <button @click="toggleBan(user)" :class="['action-btn', user.Active ? 'ban' : 'unban']" :title="user.Active ? 'Ban' : 'Unban'">{{ user.Active ? 'Ban' : 'Unban' }}</button>
+                  <button @click="toggleVerify(user)" :class="['action-btn', user.Verified ? 'unverify' : 'verify']" :title="user.Verified ? 'Unverify' : 'Verify'">{{ user.Verified ? 'Unverify' : 'Verify' }}</button>
+                  <button @click="viewUserDetails(user)" class="action-btn view" title="View">View</button>
+                  <button @click="confirmDelete(user)" class="action-btn delete" title="Delete">Delete</button>
                 </div>
               </td>
             </tr>
@@ -173,8 +171,7 @@ export default {
         if (data.profilePictureUrl) this.$set(this.userAvatars, userId, data.profilePictureUrl);
       } catch (err) { console.error('Avatar error:', err); }
     },
-    getUserAvatar(userId) { return this.userAvatars[userId] || 'https://via.placeholder.com/40x40?text=User'; },
-    handleImageError(e) { e.target.src = 'https://via.placeholder.com/40x40?text=User'; },
+    getUserAvatar(userId) { return this.userAvatars[userId] ; },
     formatDate(iso) { return new Date(iso).toLocaleDateString('en-GB'); },
     sortBy(field) {
       if (this.sortField === field) this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
@@ -182,7 +179,6 @@ export default {
     },
     getSortIcon(field) { return this.sortField === field ? (this.sortDirection === 'asc' ? '↑' : '↓') : ''; },
     clearFilters() { this.searchQuery = this.filterRole = this.filterStatus = ''; },
-    refreshData() { this.fetchUsers(); },
     async toggleBan(user) {
       try {
         const response = await fetch(`http://localhost:3000/api/admin/users/${user.ID}/ban`, { method: 'PUT' });
@@ -207,7 +203,17 @@ export default {
       } catch (err) { console.error('Delete error:', err); }
     },
     viewUserDetails(user) { this.selectedUser = user; },
-    closeModal() { this.selectedUser = null; }
+    closeModal() { this.selectedUser = null; },
+    logout() {
+      if (confirm('Are you sure you want to log out?')) {
+        // Clear any stored session data
+        localStorage.clear();
+        
+        // Terug naar home page
+        this.$router.push('/');
+
+      }
+    }
   }
 };
 </script>
@@ -224,6 +230,14 @@ export default {
   min-height: 100vh;
 }
 
+/* Header Section */
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
 /* Cards */
 .card {
   background: white;
@@ -235,7 +249,7 @@ export default {
 
 /* Typography */
 h1, h2, h3 { color: #dd1b45; margin: 0; }
-h1 { font-size: 2.5rem; margin-bottom: 20px; }
+h1 { font-size: 2.5rem; }
 h2 { font-size: 1.5rem; }
 
 /* Stats Grid */
@@ -290,12 +304,24 @@ h2 { font-size: 1.5rem; }
   border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
-  transition: opacity 0.2s;
+  transition: all 0.2s;
+  font-weight: 500;
 }
 
-.btn:hover { opacity: 0.9; }
+.btn:hover { opacity: 0.9; transform: translateY(-1px); }
 .btn.primary { background: linear-gradient(135deg, #dd1b45 0%, #fe741c 100%); color: white; }
 .btn.secondary { background: #fe741c; color: white; }
+.btn.logout { 
+  background: #542254;
+  color: white;
+  box-shadow: 0 4px 12px rgba(74, 85, 104, 0.3);
+}
+
+.btn.logout:hover {
+  background: #f54438;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(74, 85, 104, 0.4);
+}
 
 /* Table */
 .table-header {
@@ -362,38 +388,31 @@ h2 { font-size: 1.5rem; }
 .badge.role.user { background: linear-gradient(135deg, #fe741c 0%, #f6ad55 100%); }
 .badge.status.active { background: linear-gradient(135deg, #48bb78 0%, #68d391 100%); }
 .badge.status.banned { background: linear-gradient(135deg, #e53e3e 0%, #fc8181 100%); }
-.badge.verified { background: #48bb78; border-radius: 50%; animation: pulse 2s infinite; }
-
-@keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(72, 187, 120, 0.7); }
-  70% { box-shadow: 0 0 0 5px rgba(72, 187, 120, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(72, 187, 120, 0); }
-}
+.badge.verified { background: #48bb78; border-radius: 50%; }
 
 /* Actions */
-.actions { display: flex; gap: 6px; }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: right; }
 
 .action-btn {
-  width: 32px;
-  height: 32px;
+  padding: 8px 12px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
+  font-size: 12px;
+  font-weight: 500;
   transition: all 0.2s;
+  white-space: nowrap;
+  min-width: 60px;
 }
 
 .action-btn:hover { opacity: 0.8; transform: scale(1.05); }
 
-.action-btn.ban { background: linear-gradient(135deg, #e53e3e 0%, #fc8181 100%); }
-.action-btn.unban { background: linear-gradient(135deg, #48bb78 0%, #68d391 100%); }
-.action-btn.verify { background: linear-gradient(135deg, #fe741c 0%, #f6ad55 100%); }
-.action-btn.unverify { background: linear-gradient(135deg, #dd1b45 0%, #f56565 100%); }
-.action-btn.view { background: linear-gradient(135deg, #718096 0%, #a0aec0 100%); }
-.action-btn.delete { background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%); }
+.action-btn.ban { background: linear-gradient(135deg, #e53e3e 0%, #fc8181 100%); color: white; }
+.action-btn.unban { background: linear-gradient(135deg, #48bb78 0%, #68d391 100%); color: white; }
+.action-btn.verify { background: linear-gradient(135deg, #fe741c 0%, #f6ad55 100%); color: white; }
+.action-btn.unverify { background: linear-gradient(135deg, #dd1b45 0%, #f56565 100%); color: white; }
+.action-btn.view { background: linear-gradient(135deg, #718096 0%, #a0aec0 100%); color: white; }
+.action-btn.delete { background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%); color: white; }
 
 /* Modal */
 .modal {

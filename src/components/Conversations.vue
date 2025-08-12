@@ -81,7 +81,6 @@
           <img :src="selectedConversation.otherUser.picture" :alt="selectedConversation.otherUser.name" class="chat-header-avatar" />
           <div class="chat-header-info">
             <h3>{{ selectedConversation.otherUser.name }}</h3>
-            <p class="status">Active now</p>
           </div>
         </div>
 
@@ -756,11 +755,6 @@ export default {
   color: #1F1F2E;
   font-size: 1.1rem;
   margin-bottom: 0.1rem;
-}
-
-.status {
-  color: #4CAF50;
-  font-size: 0.85rem;
 }
 
 /* Messages Area */
