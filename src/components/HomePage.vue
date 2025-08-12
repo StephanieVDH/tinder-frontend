@@ -11,11 +11,6 @@
         </div>
         <div class="nav-actions">
           <router-link to="/login" class="nav-login">Log In</router-link>
-          <button class="menu-toggle">
-            <span></span>
-            <span></span>
-            <span></span>
-          </button>
         </div>
       </div>
     </header>
@@ -28,7 +23,6 @@
         <div class="hero-buttons">
           <router-link to="/register" class="btn">Get Started</router-link>
         </div>
-        <button @click="$router.push('/profile')" class="test-btn">PROFILE PAGE TEST</button>
       </div>
     </section>
 
@@ -122,12 +116,6 @@ export default {
   color: #FFFFFF;
 }
 
-.nav-actions {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
 .nav-login {
   padding: 0.6rem 1.5rem;
   border: 2px solid #FF3D47;
@@ -144,21 +132,7 @@ export default {
   color: white;
 }
 
-.menu-toggle {
-  display: none;
-  flex-direction: column;
-  background: none;
-  border: none;
-  cursor: pointer;
-  gap: 4px;
-}
 
-.menu-toggle span {
-  width: 24px;
-  height: 3px;
-  background: #E6E6F0;
-  border-radius: 2px;
-}
 
 /* Hero Section */
 .hero {
@@ -217,22 +191,6 @@ export default {
 .btn:hover {
   background: rgba(255, 255, 255, 0.35);
   transform: translateY(-1px);
-}
-
-.test-btn {
-  background-color: #dd1b45;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  margin-top: 20px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s ease;
-}
-
-.test-btn:hover {
-  background-color: #c41539;
 }
 
 /* How It Works Section */
