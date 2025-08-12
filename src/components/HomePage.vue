@@ -102,7 +102,6 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-left: -22.5rem;  /* deze afstand om te matchen met login en register */
 }
 
 .logo-icon img {
