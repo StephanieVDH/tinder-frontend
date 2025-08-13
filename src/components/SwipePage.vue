@@ -71,24 +71,57 @@
     <!-- Swipe Card -->
     <div class="card" v-if="currentUser" :class="{ 'verified': currentUser.verified }">
       <div class="picture-container">
-        <img :src="currentPicture" alt="Profile Picture" class="profile-pic" />
-      <!-- Report Button as Red Flag -->
+        <img :src="currentPicture" alt="Profile Picture" class="profile-pic" @click="nextPicture" />
+        
+        <!-- Navigation arrows for multiple pictures -->
+        <button 
+          v-if="allPictures.length > 1" 
+          @click="previousPicture" 
+          class="picture-nav prev-btn"
+          :disabled="currentPictureIndex === 0"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+          </svg>
+        </button>
+        
+        <button 
+          v-if="allPictures.length > 1" 
+          @click="nextPicture" 
+          class="picture-nav next-btn"
+          :disabled="currentPictureIndex === allPictures.length - 1"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+          </svg>
+        </button>
+
+        <!-- Report Button as Red Flag -->
         <button @click="openReportModal" class="report-btn" title="Report this user">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="red">
             <path d="M14 6l-1-2H6v16h2v-6h5l1 2h6V6h-6z"/>
           </svg>
         </button>
+        
         <!-- Verification border overlay for verified users -->
         <div v-if="currentUser.verified" class="verification-border"></div>
-        <div class="picture-dots" v-if="currentUser.pictures && currentUser.pictures.length > 1">
+        
+        <!-- Picture dots indicator -->
+        <div class="picture-dots" v-if="allPictures.length > 1">
           <span 
-            v-for="(pic, index) in currentUser.pictures" 
+            v-for="(pic, index) in allPictures" 
             :key="index"
             :class="['dot', { active: index === currentPictureIndex }]"
-            @click="currentPictureIndex = index"
+            @click="goToPicture(index)"
           ></span>
         </div>
+        
+        <!-- Picture counter -->
+        <div v-if="allPictures.length > 1" class="picture-counter">
+          {{ currentPictureIndex + 1 }} / {{ allPictures.length }}
+        </div>
       </div>
+      
       <div class="user-info">
         <div class="name-age">
           <div class="name-container">
@@ -170,15 +203,54 @@ export default {
     currentUser() {
       return this.users[this.currentIndex] || null;
     },
-    currentPicture() {
-      if (!this.currentUser) return '';
-      if (this.currentUser.pictures && this.currentUser.pictures.length > 0) {
-        return this.currentUser.pictures[this.currentPictureIndex];
+    allPictures() {
+      if (!this.currentUser) return [];
+      
+      const pictures = [];
+      
+      // Add profile picture first (if exists)
+      if (this.currentUser.picture) {
+        pictures.push(this.currentUser.picture);
       }
-      return this.currentUser.picture;
+      
+      // Add additional pictures
+      if (this.currentUser.additionalPictures && this.currentUser.additionalPictures.length > 0) {
+        pictures.push(...this.currentUser.additionalPictures);
+      }
+      
+      return pictures;
+    },
+    currentPicture() {
+      if (this.allPictures.length === 0) return '';
+      return this.allPictures[this.currentPictureIndex] || this.allPictures[0];
+    }
+  },
+  watch: {
+    currentIndex() {
+      // Reset picture index when user changes
+      this.currentPictureIndex = 0;
     }
   },
   methods: {
+    // Picture navigation methods
+    nextPicture() {
+      if (this.currentPictureIndex < this.allPictures.length - 1) {
+        this.currentPictureIndex++;
+      }
+    },
+    
+    previousPicture() {
+      if (this.currentPictureIndex > 0) {
+        this.currentPictureIndex--;
+      }
+    },
+    
+    goToPicture(index) {
+      if (index >= 0 && index < this.allPictures.length) {
+        this.currentPictureIndex = index;
+      }
+    },
+
     async getUserLocation() {
       try {
         this.userId = AuthService.getUserId();
@@ -252,15 +324,15 @@ export default {
       
       this.isSubmittingReport = true;
       try {
-        const response = await fetch('http://localhost:3000/api/report', {
+        const response = await fetch('http://localhost:3000/api/reports', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${this.userId}`
           },
           body: JSON.stringify({
-            reporterID: this.userId,
-            reportedID: this.userToReport.id,
+            reporterId: this.userId,
+            reportedId: this.userToReport.id,
             reason: this.reportReason.trim()
           })
         });
@@ -285,6 +357,24 @@ export default {
       } finally {
         this.isSubmittingReport = false;
       }
+    },
+
+    async fetchUserAdditionalPictures(userId) {
+      try {
+        const response = await fetch(`http://localhost:3000/api/pictures/${userId}`, {
+          headers: {
+            'Authorization': `Bearer ${this.userId}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          return data.pictures.map(pic => pic.url);
+        }
+      } catch (error) {
+        console.error('Failed to fetch additional pictures for user:', userId, error);
+      }
+      return [];
     },
 
     async fetchUsers() {
@@ -324,6 +414,11 @@ export default {
               );
             }
           });
+        }
+
+        // Fetch additional pictures for each user
+        for (const user of data) {
+          user.additionalPictures = await this.fetchUserAdditionalPictures(user.id);
         }
         
         this.users = data;
@@ -632,6 +727,53 @@ export default {
   height: 280px;
   object-fit: cover;
   border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.profile-pic:hover {
+  transform: scale(1.02);
+}
+
+/* Picture Navigation Arrows */
+.picture-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0;
+  z-index: 10;
+}
+
+.picture-container:hover .picture-nav {
+  opacity: 1;
+}
+
+.prev-btn {
+  left: 10px;
+}
+
+.next-btn {
+  right: 10px;
+}
+
+.picture-nav:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.8);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.picture-nav:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 /* Verification border overlay */
@@ -649,11 +791,14 @@ export default {
 
 .picture-dots {
   position: absolute;
-  bottom: 10px;
+  bottom: 15px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 6px;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 8px 12px;
+  border-radius: 20px;
 }
 
 .dot {
@@ -667,7 +812,25 @@ export default {
 
 .dot.active {
   background: white;
-  transform: scale(1.2);
+  transform: scale(1.3);
+}
+
+.dot:hover {
+  background: rgba(255, 255, 255, 0.8);
+  transform: scale(1.1);
+}
+
+/* Picture Counter */
+.picture-counter {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
 }
 
 .user-info {

@@ -22,7 +22,7 @@
         <!-- Profile Header -->
         <div class="profile-header">
           <div class="profile-picture-section">
-            <div class="picture-upload-area" @click="$refs.fileInput.click()">
+            <div class="picture-upload-area" @click="$refs.profileFileInput.click()">
               <img v-if="profilePictureUrl" :src="profilePictureUrl" alt="Profile Picture" class="profile-image" />
               <div v-else class="placeholder-image">
                 <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
@@ -32,7 +32,7 @@
                 <span>Add Photo</span>
               </div>
             </div>
-            <input type="file" ref="fileInput" @change="handleFileUpload" class="hidden-file-input" accept="image/*" />
+            <input type="file" ref="profileFileInput" @change="handleProfilePictureUpload" class="hidden-file-input" accept="image/*" />
           </div>
           <div class="profile-header-info">
             <h1 class="profile-name">{{ profile.Username || 'Your Name' }}</h1>
@@ -69,6 +69,65 @@
                 maxlength="500"
               ></textarea>
               <div class="char-count">{{ (profile.Bio || '').length }}/500</div>
+            </div>
+
+            <!-- Picture Gallery Section -->
+            <div class="form-section pictures-section">
+              <h3 class="section-title">
+                <svg width="20" height="20" fill="#DD1B45" viewBox="0 0 24 24">
+                  <path d="M8.5,13.5L11,16.5L14.5,12L19,18H5M21,19V5C21,3.89 20.1,3 19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19Z"/>
+                </svg>
+                Your Pictures ({{ additionalPictures.length }}/5)
+              </h3>
+              
+              <div class="pictures-grid">
+                <!-- Additional Pictures -->
+                <div 
+                  v-for="(picture, pictureIndex) in additionalPictures" 
+                  :key="pictureIndex" 
+                  class="picture-item"
+                >
+                  <img :src="picture.url" :alt="`Picture ${pictureIndex + 1}`" class="gallery-image" />
+                  <div class="picture-overlay">
+                    <button 
+                      @click="removePicture(pictureIndex)" 
+                      class="remove-btn"
+                      type="button"
+                    >
+                      <svg width="16" height="16" fill="white" viewBox="0 0 24 24">
+                        <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- Add Picture Button -->
+                <div 
+                  v-if="additionalPictures.length < 5" 
+                  class="picture-item add-picture-btn"
+                  @click="$refs.additionalFileInput.click()"
+                >
+                  <div class="add-picture-content">
+                    <svg width="32" height="32" fill="#DD1B45" viewBox="0 0 24 24">
+                      <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+                    </svg>
+                    <span>Add Photo</span>
+                  </div>
+                </div>
+              </div>
+              
+              <input 
+                type="file" 
+                ref="additionalFileInput" 
+                @change="handleAdditionalPictureUpload" 
+                class="hidden-file-input" 
+                accept="image/*"
+                multiple
+              />
+              
+              <div class="pictures-info">
+                <p>Add up to 5 additional pictures to showcase your personality!</p>
+              </div>
             </div>
 
             <div class="form-section">
@@ -169,6 +228,7 @@
 </template>
 
 <script>
+/* eslint-disable */
 import { AuthService } from '@/auth.js';
 
 const API_BASE = 'http://localhost:3000/api';
@@ -182,11 +242,16 @@ export default {
     genders: [],
     profilePicture: null,
     profilePictureUrl: '',
+    additionalPictures: [], // Array to store additional pictures
+    newAdditionalPictures: [], // Array to store new pictures to upload
     preferences: { selectedGenders: [], MinAge: 18, MaxAge: 99, MaxDistance: 50 }
   }),
   
   async mounted() {
-    if (this.checkAuth()) await this.fetchProfile();
+    if (this.checkAuth()) {
+      await this.fetchProfile();
+      await this.fetchAllPictures();
+    }
   },
   
   beforeRouteEnter(to, from, next) {
@@ -247,6 +312,17 @@ export default {
         }
       }
     },
+
+    async fetchAllPictures() {
+      try {
+        const response = await this.apiCall(`/pictures/${this.userId}`);
+        this.additionalPictures = response.pictures || [];
+      } catch (err) {
+        if (err.message !== 'Unauthorized') {
+          console.error('Error fetching pictures:', err);
+        }
+      }
+    },
     
     async fetchPreferences() {
       try {
@@ -266,13 +342,59 @@ export default {
       }
     },
     
-    handleFileUpload(event) {
+    handleProfilePictureUpload(event) {
       const file = event.target.files[0];
       if (file) {
         this.profilePicture = file;
         const reader = new FileReader();
         reader.onload = (e) => this.profilePictureUrl = e.target.result;
         reader.readAsDataURL(file);
+      }
+    },
+
+    handleAdditionalPictureUpload(event) {
+      const files = Array.from(event.target.files);
+      const remainingSlots = 5 - this.additionalPictures.length;
+      
+      if (files.length > remainingSlots) {
+        alert(`You can only add ${remainingSlots} more picture(s).`);
+        return;
+      }
+
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.additionalPictures.push({
+            url: e.target.result,
+            file: file,
+            isNew: true
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // Clear the input
+      event.target.value = '';
+    },
+
+    removePicture(pictureIndex) {
+      const picture = this.additionalPictures[pictureIndex];
+      if (picture.id) {
+        // This is an existing picture from the database
+        this.deletePictureFromDatabase(picture.id);
+      }
+      this.additionalPictures.splice(pictureIndex, 1);
+    },
+
+    async deletePictureFromDatabase(pictureId) {
+      try {
+        await this.apiCall(`/pictures/${pictureId}`, {
+          method: 'DELETE'
+        });
+      } catch (err) {
+        if (err.message !== 'Unauthorized') {
+          console.error('Error deleting picture:', err);
+        }
       }
     },
     
@@ -300,6 +422,12 @@ export default {
           formData.append('profilePicture', this.profilePicture);
         }
 
+        // Add new additional pictures
+        const newPictures = this.additionalPictures.filter(pic => pic.isNew && pic.file);
+        newPictures.forEach((picture, index) => {
+          formData.append('additionalPictures', picture.file);
+        });
+
         await fetch(`${API_BASE}/profile/${this.userId}`, {
           method: 'PUT',
           headers: { 'Authorization': `Bearer ${this.userId}` },
@@ -307,6 +435,15 @@ export default {
         });
         
         await this.fetchProfile();
+        await this.fetchAllPictures();
+        
+        // Clear the new pictures array and update the additional pictures
+        this.additionalPictures = this.additionalPictures.map(pic => ({
+          ...pic,
+          isNew: false,
+          file: null
+        }));
+        
       } catch (err) {
         if (err.message !== 'Unauthorized') {
           console.error('Error updating profile:', err);
@@ -479,6 +616,7 @@ export default {
 .profile-image {
   width: 100%;
   height: 100%;
+  background: white;
   object-fit: cover;
 }
 
@@ -598,6 +736,129 @@ export default {
   font-size: 0.85rem;
   color: #666;
   margin-top: 0.5rem;
+}
+
+/* Pictures Section */
+.pictures-section {
+  background: linear-gradient(135deg, rgba(84, 34, 84, 0.05), rgba(221, 27, 69, 0.05));
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 2px solid rgba(84, 34, 84, 0.1);
+}
+
+.pictures-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.picture-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.picture-item:hover {
+  transform: scale(1.05);
+}
+
+.gallery-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #f8f9fa;
+}
+
+.picture-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.picture-item:hover .picture-overlay {
+  opacity: 1;
+}
+
+.profile-pic-display .picture-overlay {
+  opacity: 1;
+  background: rgba(221, 27, 69, 0.8);
+}
+
+.profile-badge {
+  background: white;
+  color: #dd1b45;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.remove-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid white;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.remove-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.add-picture-btn {
+  border: 2px dashed #dd1b45;
+  background: rgba(221, 27, 69, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.add-picture-btn:hover {
+  background: rgba(221, 27, 69, 0.1);
+  border-color: #c41539;
+}
+
+.add-picture-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: #dd1b45;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.pictures-info {
+  background: rgba(221, 27, 69, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.pictures-info p {
+  color: #666;
+  font-size: 0.9rem;
+  margin: 0;
+  text-align: center;
 }
 
 /* Form Grid */

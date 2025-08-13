@@ -1,7 +1,4 @@
-// Close modal and navigate to conversations page
-this.closeProfileModal();
-this.$router.push({
-name<template>
+<template>
  <div class="page-container">
 <!-- Header Navigation -->
 <header class="header">
@@ -108,14 +105,53 @@ v-for="match in matches"
 </div>
 </div>
 </div>
-<!-- Profile Modal -->
+<!-- Enhanced Profile Modal with Multiple Pictures -->
 <div v-if="showProfileModal" class="modal-overlay" @click="closeProfileModal">
 <div class="profile-modal" @click.stop>
 <button class="modal-close" @click="closeProfileModal">&times;</button>
 <div class="profile-image-container">
-<img :src="selectedMatch?.user?.picture" :alt="selectedMatch?.user?.name" class="profile-image" />
+<img :src="currentModalPicture" :alt="selectedMatch?.user?.name" class="profile-image" @click="nextModalPicture" />
+
+<!-- Navigation arrows for multiple pictures -->
+<button 
+v-if="modalAllPictures.length > 1" 
+@click="previousModalPicture" 
+class="modal-picture-nav modal-prev-btn"
+:disabled="modalPictureIndex === 0"
+>
+<svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+<path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+</svg>
+</button>
+
+<button 
+v-if="modalAllPictures.length > 1" 
+@click="nextModalPicture" 
+class="modal-picture-nav modal-next-btn"
+:disabled="modalPictureIndex === modalAllPictures.length - 1"
+>
+<svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+<path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+</svg>
+</button>
+
 <!-- Verification border overlay for verified users in modal -->
 <div v-if="selectedMatch?.user?.verified" class="modal-verification-border"></div>
+
+<!-- Picture dots indicator -->
+<div class="modal-picture-dots" v-if="modalAllPictures.length > 1">
+<span 
+v-for="(pic, index) in modalAllPictures" 
+:key="index"
+:class="['modal-dot', { active: index === modalPictureIndex }]"
+@click="goToModalPicture(index)"
+></span>
+</div>
+
+<!-- Picture counter -->
+<div v-if="modalAllPictures.length > 1" class="modal-picture-counter">
+{{ modalPictureIndex + 1 }} / {{ modalAllPictures.length }}
+</div>
 </div>
 <div class="profile-details">
 <div class="profile-name-age">
@@ -164,10 +200,71 @@ conversationsCount: 0,
 userId: null,
 showProfileModal: false,
 selectedMatch: null,
-currentUserLocation: null
+currentUserLocation: null,
+modalPictureIndex: 0
  };
  },
+computed: {
+modalAllPictures() {
+if (!this.selectedMatch) return [];
+
+const pictures = [];
+
+// Add profile picture first (if exists)
+if (this.selectedMatch.user.picture) {
+pictures.push(this.selectedMatch.user.picture);
+}
+
+// Add additional pictures
+if (this.selectedMatch.user.additionalPictures && this.selectedMatch.user.additionalPictures.length > 0) {
+pictures.push(...this.selectedMatch.user.additionalPictures);
+}
+
+return pictures;
+},
+currentModalPicture() {
+if (this.modalAllPictures.length === 0) return '';
+return this.modalAllPictures[this.modalPictureIndex] || this.modalAllPictures[0];
+}
+},
 methods: {
+// Modal picture navigation methods
+nextModalPicture() {
+if (this.modalPictureIndex < this.modalAllPictures.length - 1) {
+this.modalPictureIndex++;
+}
+},
+
+previousModalPicture() {
+if (this.modalPictureIndex > 0) {
+this.modalPictureIndex--;
+}
+},
+
+goToModalPicture(index) {
+if (index >= 0 && index < this.modalAllPictures.length) {
+this.modalPictureIndex = index;
+}
+},
+
+async fetchUserAdditionalPictures(userId) {
+try {
+const response = await fetch(`http://localhost:3000/api/pictures/${userId}`, {
+headers: {
+'Authorization': `Bearer ${this.userId}`
+}
+});
+
+if (response.ok) {
+const data = await response.json();
+return data.pictures.map(pic => pic.url);
+}
+} catch (error) {
+console.error('Failed to fetch additional pictures for user:', userId, error);
+}
+return [];
+},
+
 async fetchMatches() {
 try {
 this.userId = AuthService.getUserId();
@@ -199,28 +296,9 @@ const matchesData = await matchesResponse.json();
 // Debug logging to see the structure of matches data
 console.log('Matches data from API:', matchesData);
 
-// Fetch detailed profile information for each match to get verification status and location
 for (let match of matchesData) {
-try {
-const profileResponse = await fetch(`http://localhost:3000/api/profile/${match.user.id}`, {
-headers: {
-'Authorization': `Bearer ${this.userId}`,
-'Content-Type': 'application/json'
- }
- });
-if (profileResponse.ok) {
-const profileData = await profileResponse.json();
-match.user.verified = profileData.profile.Verified || false;
-match.user.dateOfBirth = profileData.profile.DateOfBirth;
-match.user.bio = profileData.profile.Bio;
-match.user.latitude = profileData.profile.Latitude;
-match.user.longitude = profileData.profile.Longitude;
- }
- } catch (profileErr) {
-console.error('Error fetching profile details for match:', profileErr);
-match.user.verified = false;
- }
- }
+  match.user.additionalPictures = await this.fetchUserAdditionalPictures(match.user.id);
+}
 this.matches = matchesData;
 // Fetch conversations count
 try {
@@ -340,12 +418,14 @@ return age;
  },
 openProfileModal(match) {
 this.selectedMatch = match;
+this.modalPictureIndex = 0; // Reset picture index when opening modal
 this.showProfileModal = true;
 document.body.style.overflow = 'hidden'; // Prevent background scrolling
  },
 closeProfileModal() {
 this.showProfileModal = false;
 this.selectedMatch = null;
+this.modalPictureIndex = 0; // Reset picture index when closing modal
 document.body.style.overflow = 'auto'; // Restore scrolling
  },
 async openConversation() {
@@ -702,6 +782,7 @@ justify-content: center;
 box-shadow: 0 0 6px rgba(255, 215, 0, 0.5);
 flex-shrink: 0;
 }
+
 /* Modal Styles */
 .modal-overlay {
 position: fixed;
@@ -718,6 +799,7 @@ opacity: 1;
 visibility: visible;
 transition: all 0.3s ease;
 }
+
 .profile-modal {
 background: white;
 border-radius: 20px;
@@ -729,6 +811,7 @@ position: relative;
 transform: scale(1);
 transition: transform 0.3s ease;
 }
+
 .modal-close {
 position: absolute;
 top: 20px;
@@ -741,24 +824,75 @@ height: 40px;
 cursor: pointer;
 font-size: 1.5rem;
 color: #333;
-z-index: 10;
+z-index: 20;
 transition: all 0.3s ease;
 }
+
 .modal-close:hover {
 background: white;
 transform: scale(1.1);
 }
+
 .profile-image-container {
 position: relative;
 height: 400px;
 overflow: hidden;
 border-radius: 20px 20px 0 0;
 }
+
 .profile-image {
 width: 100%;
 height: 100%;
 object-fit: cover;
+cursor: pointer;
+transition: all 0.2s ease;
 }
+
+.profile-image:hover {
+transform: scale(1.02);
+}
+
+/* Modal Picture Navigation Arrows */
+.modal-picture-nav {
+position: absolute;
+top: 50%;
+transform: translateY(-50%);
+background: rgba(0, 0, 0, 0.6);
+border: none;
+border-radius: 50%;
+width: 50px;
+height: 50px;
+display: flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+transition: all 0.2s ease;
+opacity: 0;
+z-index: 15;
+}
+
+.profile-image-container:hover .modal-picture-nav {
+opacity: 1;
+}
+
+.modal-prev-btn {
+left: 15px;
+}
+
+.modal-next-btn {
+right: 15px;
+}
+
+.modal-picture-nav:hover:not(:disabled) {
+background: rgba(0, 0, 0, 0.8);
+transform: translateY(-50%) scale(1.1);
+}
+
+.modal-picture-nav:disabled {
+opacity: 0.3;
+cursor: not-allowed;
+}
+
 /* Verification border overlay for modal */
 .modal-verification-border {
 position: absolute;
@@ -771,9 +905,58 @@ border-radius: 20px 20px 0 0;
 box-shadow: inset 0 0 0 2px white, 0 0 15px rgba(255, 215, 0, 0.4);
 pointer-events: none;
 }
+
+/* Modal Picture Dots */
+.modal-picture-dots {
+position: absolute;
+bottom: 20px;
+left: 50%;
+transform: translateX(-50%);
+display: flex;
+gap: 10px;
+background: rgba(0, 0, 0, 0.6);
+padding: 10px 15px;
+border-radius: 25px;
+z-index: 15;
+}
+
+.modal-dot {
+width: 10px;
+height: 10px;
+border-radius: 50%;
+background: rgba(255, 255, 255, 0.5);
+cursor: pointer;
+transition: all 0.2s ease;
+}
+
+.modal-dot.active {
+background: white;
+transform: scale(1.4);
+}
+
+.modal-dot:hover {
+background: rgba(255, 255, 255, 0.8);
+transform: scale(1.2);
+}
+
+/* Modal Picture Counter */
+.modal-picture-counter {
+position: absolute;
+top: 20px;
+left: 20px;
+background: rgba(0, 0, 0, 0.7);
+color: white;
+padding: 6px 12px;
+border-radius: 15px;
+font-size: 0.9rem;
+font-weight: 500;
+z-index: 15;
+}
+
 .profile-details {
 padding: 30px;
 }
+
 .profile-name-age {
 display: flex;
 align-items: center;
@@ -781,16 +964,19 @@ justify-content: space-between;
 margin-bottom: 15px;
 gap: 10px;
 }
+
 .modal-name-container {
 display: flex;
 align-items: center;
 gap: 8px;
 }
+
 .profile-name {
 font-size: 2rem;
 font-weight: bold;
 color: #333;
 }
+
 .profile-age {
 font-size: 1.5rem;
 color: #666;
@@ -798,6 +984,7 @@ background: #f1f2f6;
 padding: 5px 15px;
 border-radius: 20px;
 }
+
 /* Verification badge for modal */
 .modal-verification-badge {
 width: 24px;
@@ -810,6 +997,7 @@ justify-content: center;
 box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 flex-shrink: 0;
 }
+
 /* Distance information styling */
 .profile-distance {
 display: flex;
@@ -823,6 +1011,7 @@ border-left: 4px solid #007bff;
 color: #666;
 font-weight: 500;
 }
+
 .profile-bio {
 color: #555;
 font-size: 1rem;
@@ -833,12 +1022,14 @@ background: #f8f9fa;
 border-radius: 15px;
 border-left: 4px solid #ff4757;
 }
+
 .profile-actions {
 margin-top: 20px;
 display: flex;
 flex-direction: column;
 gap: 10px;
 }
+
 .action-btn {
 padding: 15px;
 border: none;
@@ -848,15 +1039,18 @@ font-weight: bold;
 cursor: pointer;
 transition: all 0.3s ease;
 }
+
 .message-btn {
 background: #45b6fe;
 color: white;
 width: 100%;
 }
+
 .message-btn:hover {
 background: #27a1ec;
 transform: translateY(-2px);
 }
+
 /* Coming Soon / No Matches States */
 .coming-soon,
 .conversations-preview,
@@ -867,6 +1061,7 @@ padding: 4rem 2rem;
 text-align: center;
 box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
+
 .coming-soon h3,
 .conversations-preview h3,
 .no-matches h2 {
@@ -875,12 +1070,14 @@ font-weight: 600;
 color: #1F1F2E;
 margin: 1rem 0;
 }
+
 .coming-soon p,
 .conversations-preview p,
 .no-matches p {
 color: #666;
 margin-bottom: 2rem;
 }
+
 .btn-primary {
 background: linear-gradient(135deg, #dd1b45, #f54438);
 color: white;
@@ -893,6 +1090,7 @@ cursor: pointer;
 transition: all 0.2s ease;
 box-shadow: 0 4px 16px rgba(221, 27, 69, 0.3);
 }
+
 .btn-primary:hover {
 transform: translateY(-2px);
 box-shadow: 0 6px 20px rgba(221, 27, 69, 0.4);
