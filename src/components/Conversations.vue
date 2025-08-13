@@ -197,10 +197,33 @@ export default {
         const data = await response.json();
         this.conversations = data;
         
+        // Auto-open conversation if specified in route params
+        this.checkAndAutoOpenConversation();
+        
       } catch (err) {
         console.error('Error fetching conversations:', err);
       } finally {
         this.loadingConversations = false;
+      }
+    },
+    
+    checkAndAutoOpenConversation() {
+      // Check if we should auto-open a specific conversation
+      if (this.$route.query.autoOpen === 'true' && this.$route.params.conversationId) {
+        const conversationId = parseInt(this.$route.params.conversationId);
+        console.log('Auto-opening conversation ID:', conversationId);
+        
+        // Find the conversation in the list
+        const conversation = this.conversations.find(c => c.conversationId === conversationId);
+        
+        if (conversation) {
+          console.log('Found conversation to auto-open:', conversation);
+          this.$nextTick(() => {
+            this.selectConversation(conversation);
+          });
+        } else {
+          console.log('Conversation not found, available conversations:', this.conversations.map(c => c.conversationId));
+        }
       }
     },
     
@@ -441,11 +464,6 @@ export default {
     this.fetchConversations();
     this.startAutoRefresh();
     window.addEventListener('resize', this.handleResize);
-    
-    // Check if coming from a specific match
-    if (this.$route.params.matchId) {
-      // You can implement opening specific conversation by matchId
-    }
   },
   
   beforeDestroy() {

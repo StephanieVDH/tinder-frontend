@@ -28,10 +28,56 @@
       </div>
     </div>
 
+        <!-- Report Modal -->
+    <div v-if="showReportModal" class="report-modal-overlay" @click="closeReportModal">
+      <div class="report-modal" @click.stop>
+        <div class="report-header">
+          <h3>Report {{ userToReport?.name }}</h3>
+          <button @click="closeReportModal" class="close-report-btn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="report-content">
+          <p>Please tell us why you're reporting this user:</p>
+          <textarea 
+            v-model="reportReason" 
+            placeholder="Describe the issue (inappropriate behavior, fake profile, harassment, etc.)"
+            class="report-textarea"
+            rows="4"
+          ></textarea>
+          <div class="report-actions">
+            <button @click="closeReportModal" class="cancel-report-btn">Cancel</button>
+            <button @click="submitReport" class="submit-report-btn" :disabled="!reportReason.trim() || isSubmittingReport">
+              {{ isSubmittingReport ? 'Reporting...' : 'Submit Report' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Report Success Notification -->
+    <div v-if="showReportSuccess" class="report-success-notification">
+      <div class="report-success-content">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="#4CAF50">
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+        </svg>
+        <h3>Report Submitted</h3>
+        <p>Thank you for keeping our community safe. We'll review this report.</p>
+      </div>
+    </div>
+
     <!-- Swipe Card -->
     <div class="card" v-if="currentUser" :class="{ 'verified': currentUser.verified }">
       <div class="picture-container">
         <img :src="currentPicture" alt="Profile Picture" class="profile-pic" />
+      <!-- Report Button as Red Flag -->
+        <button @click="openReportModal" class="report-btn" title="Report this user">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="red">
+            <path d="M14 6l-1-2H6v16h2v-6h5l1 2h6V6h-6z"/>
+          </svg>
+        </button>
         <!-- Verification border overlay for verified users -->
         <div v-if="currentUser.verified" class="verification-border"></div>
         <div class="picture-dots" v-if="currentUser.pictures && currentUser.pictures.length > 1">
@@ -91,7 +137,6 @@
     <div v-else class="end-container">
       <p class="end-text">No more profiles to show!</p>
       <p class="end-subtext">Check back later for new people</p>
-      <button @click="refreshUsers" class="refresh-btn">Refresh</button>
     </div>
   </div>
 </template>
@@ -112,7 +157,13 @@ export default {
       lastMatchedUser: '',
       matchCount: 0,
       userId: null,
-      userLocation: null
+      userLocation: null,
+      // Report functionality
+      showReportModal: false,
+      showReportSuccess: false,
+      userToReport: null,
+      reportReason: '',
+      isSubmittingReport: false
     };
   },
   computed: {
@@ -178,6 +229,61 @@ export default {
         return `${distance.toFixed(1)}km away`;
       } else {
         return `${Math.round(distance)}km away`;
+      }
+    },
+
+    // Report functionality methods
+    openReportModal() {
+      if (!this.currentUser) return;
+      this.userToReport = this.currentUser;
+      this.showReportModal = true;
+      this.reportReason = '';
+    },
+
+    closeReportModal() {
+      this.showReportModal = false;
+      this.userToReport = null;
+      this.reportReason = '';
+      this.isSubmittingReport = false;
+    },
+
+    async submitReport() {
+      if (!this.reportReason.trim() || !this.userToReport || this.isSubmittingReport) return;
+      
+      this.isSubmittingReport = true;
+      try {
+        const response = await fetch('http://localhost:3000/api/report', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.userId}`
+          },
+          body: JSON.stringify({
+            reporterID: this.userId,
+            reportedID: this.userToReport.id,
+            reason: this.reportReason.trim()
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to submit report');
+        }
+
+        // Show success notification
+        this.closeReportModal();
+        this.showReportSuccess = true;
+        
+        // Auto-hide success notification after 3 seconds
+        setTimeout(() => {
+          this.showReportSuccess = false;
+        }, 3000);
+
+      } catch (error) {
+        console.error('Failed to submit report:', error);
+        alert('Failed to submit report: ' + error.message);
+      } finally {
+        this.isSubmittingReport = false;
       }
     },
 
@@ -304,15 +410,6 @@ export default {
     nextUser() {
       this.currentIndex++;
       this.currentPictureIndex = 0;
-      
-      // If we've gone through all users, refresh the list
-      if (this.currentIndex >= this.users.length) {
-        this.fetchUsers();
-      }
-    },
-    
-    refreshUsers() {
-      this.fetchUsers();
     },
     
     logout() {
@@ -702,6 +799,221 @@ export default {
   cursor: not-allowed;
 }
 
+/* Report Modal Styles */
+.report-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1500;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.report-modal {
+  background: white;
+  border-radius: 16px;
+  padding: 0;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #eee;
+  background: #f8f9fa;
+}
+
+.report-header h3 {
+  color: #333;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.close-report-btn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.close-report-btn:hover {
+  background: #e9ecef;
+  color: #333;
+}
+
+.report-content {
+  padding: 2rem;
+}
+
+.report-content p {
+  color: #555;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.report-textarea {
+  width: 100%;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  padding: 1rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 100px;
+  transition: border-color 0.2s ease;
+}
+
+.report-textarea:focus {
+  outline: none;
+  border-color: #dd1b45;
+}
+
+.report-textarea::placeholder {
+  color: #999;
+}
+
+.report-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  justify-content: flex-end;
+}
+
+.cancel-report-btn {
+  padding: 0.75rem 1.5rem;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  background: white;
+  color: #6c757d;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-report-btn:hover {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.submit-report-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  background: #dc3545;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submit-report-btn:hover:not(:disabled) {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+.submit-report-btn:disabled {
+  background: #dee2e6;
+  color: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Report Button */
+.report-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(227, 190, 190, 0.6);
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.report-btn:hover {
+  background: rgba(220, 53, 69, 0.8);
+  transform: scale(1.1);
+}
+
+/* Report Success Notification */
+.report-success-notification {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  z-index: 1600;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  animation: successSlideIn 0.3s ease;
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+}
+
+@keyframes successSlideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.report-success-content h3 {
+  color: #333;
+  margin: 1rem 0 0.5rem 0;
+  font-size: 1.3rem;
+}
+
+.report-success-content p {
+  color: #666;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
 /* Loading and End States */
 .loading {
   margin-top: 100px;
@@ -725,22 +1037,5 @@ export default {
   color: #666;
   font-size: 16px;
   margin-bottom: 20px;
-}
-
-.refresh-btn {
-  background: linear-gradient(135deg, #dd1b45, #f54438);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.refresh-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(221, 27, 69, 0.3);
 }
 </style>
