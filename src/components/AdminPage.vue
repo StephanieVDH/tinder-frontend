@@ -14,70 +14,126 @@
       </div>
     </div>
 
-    <!-- Search and Filters -->
+    <!-- Navigation Tabs -->
     <div class="card">
-      <div class="search-bar">
-        <input v-model="searchQuery" type="text" placeholder="Search users..." class="input">
-        <button class="btn primary">🔍</button>
-      </div>
-      <div class="filters">
-        <select v-model="filterRole" class="input">
-          <option value="">All Roles</option>
-          <option value="user">Users</option>
-          <option value="admin">Admins</option>
-        </select>
-        <select v-model="filterStatus" class="input">
-          <option value="">All Status</option>
-          <option value="active">Active Only</option>
-          <option value="banned">Banned Only</option>
-          <option value="verified">Verified Only</option>
-          <option value="unverified">Unverified Only</option>
-        </select>
-        <button @click="clearFilters" class="btn secondary">Clear</button>
+      <div class="tabs">
+        <button @click="activeTab = 'users'" :class="['tab-btn', { active: activeTab === 'users' }]">
+          👥 Users
+        </button>
+        <button @click="activeTab = 'reports'" :class="['tab-btn', { active: activeTab === 'reports' }]">
+          🚨 Reports <span v-if="pendingReports > 0" class="notification-badge">{{ pendingReports }}</span>
+        </button>
       </div>
     </div>
 
-    <!-- Users Table -->
-    <div class="card">
-      <div class="table-header">
-        <h2>User Management</h2>
+    <!-- Users Tab -->
+    <div v-if="activeTab === 'users'">
+      <!-- Search and Filters -->
+      <div class="card">
+        <div class="search-bar">
+          <input v-model="searchQuery" type="text" placeholder="Search users..." class="input">
+          <button class="btn primary">🔍</button>
+        </div>
+        <div class="filters">
+          <select v-model="filterRole" class="input">
+            <option value="">All Roles</option>
+            <option value="user">Users</option>
+            <option value="admin">Admins</option>
+          </select>
+          <select v-model="filterStatus" class="input">
+            <option value="">All Status</option>
+            <option value="active">Active Only</option>
+            <option value="banned">Banned Only</option>
+            <option value="verified">Verified Only</option>
+            <option value="unverified">Unverified Only</option>
+          </select>
+          <button @click="clearFilters" class="btn secondary">Clear</button>
+        </div>
       </div>
-      
-      <div class="table-wrapper">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Avatar</th>
-              <th @click="sortBy('ID')" class="sortable">ID {{ getSortIcon('ID') }}</th>
-              <th @click="sortBy('Username')" class="sortable">Name {{ getSortIcon('Username') }}</th>
-              <th @click="sortBy('Email')" class="sortable">Email {{ getSortIcon('Email') }}</th>
-              <th>Status</th>
-              <th style="text-align: center;">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="user in filteredUsers" :key="user.ID" class="user-row">
-              <td><img :src="getUserAvatar(user.ID)" class="avatar"></td>
-              <td>{{ user.ID }}</td>
-              <td>
-                <div class="user-info">
-                  {{ user.Username }}
-                  <span v-if="user.Verified" class="badge verified">✓</span>
-                </div>
-              </td>
-              <td>{{ user.Email }}</td>
-              <td><span :class="['badge', 'status', user.Active ? 'active' : 'banned']">{{ user.Active ? 'Active' : 'Banned' }}</span></td>
-              <td>
-                <div class="actions">
-                  <button @click="toggleBan(user)" :class="['action-btn', user.Active ? 'ban' : 'unban']" :title="user.Active ? 'Ban' : 'Unban'">{{ user.Active ? 'Ban' : 'Unban' }}</button>
-                  <button @click="toggleVerify(user)" :class="['action-btn', user.Verified ? 'unverify' : 'verify']" :title="user.Verified ? 'Unverify' : 'Verify'">{{ user.Verified ? 'Unverify' : 'Verify' }}</button>
-                  <button @click="viewUserDetails(user)" class="action-btn view" title="View">View</button>
-                  <button @click="confirmDelete(user)" class="action-btn delete" title="Delete">Delete</button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+
+      <!-- Users Table -->
+      <div class="card">
+        <div class="table-header">
+          <h2>User Management</h2>
+        </div>
+        
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Avatar</th>
+                <th @click="sortBy('ID')" class="sortable">ID {{ getSortIcon('ID') }}</th>
+                <th @click="sortBy('Username')" class="sortable">Name {{ getSortIcon('Username') }}</th>
+                <th @click="sortBy('Email')" class="sortable">Email {{ getSortIcon('Email') }}</th>
+                <th>Status</th>
+                <th style="text-align: center;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="user in filteredUsers" :key="user.ID" class="user-row">
+                <td><img :src="getUserAvatar(user.ID)" class="avatar"></td>
+                <td>{{ user.ID }}</td>
+                <td>
+                  <div class="user-info">
+                    {{ user.Username }}
+                    <span v-if="user.Verified" class="verified-star">⭐️</span>
+                  </div>
+                </td>
+                <td>{{ user.Email }}</td>
+                <td><span :class="['badge', 'status', user.Active ? 'active' : 'banned']">{{ user.Active ? 'Active' : 'Banned' }}</span></td>
+                <td>
+                  <div class="actions">
+                    <button @click="toggleBan(user)" :class="['action-btn', user.Active ? 'ban' : 'unban']" :title="user.Active ? 'Ban' : 'Unban'">{{ user.Active ? 'Ban' : 'Unban' }}</button>
+                    <button @click="toggleVerify(user)" :class="['action-btn', user.Verified ? 'unverify' : 'verify']" :title="user.Verified ? 'Unverify' : 'Verify'">{{ user.Verified ? 'Unverify' : 'Verify' }}</button>
+                    <button @click="viewUserDetails(user)" class="action-btn view" title="View">View</button>
+                    <button @click="confirmDelete(user)" class="action-btn delete" title="Delete">Delete</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reports Tab -->
+    <div v-if="activeTab === 'reports'">
+      <div class="card">
+        <div class="table-header">
+          <h2>User Reports</h2>
+          <button @click="fetchReports" class="btn primary">🔄 Refresh</button>
+        </div>
+        
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Reporter</th>
+                <th>Reported User</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th style="text-align: center;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="report in reports" :key="report.reportId" class="user-row">
+                <td>{{ report.reporterName }}</td>
+                <td>{{ report.reportedName }}</td>
+                <td>{{ report.Reason }}</td>
+                <td><span :class="['badge', 'status', report.Status.toLowerCase()]">{{ report.Status }}</span></td>
+                <td>{{ formatDate(report.DateCreated) }}</td>
+                <td>
+                  <div class="actions">
+                    <button v-if="report.Status === 'Pending'" @click="updateReport(report.reportId, 'Reviewed')" class="action-btn verify">Review</button>
+                    <button v-if="report.Status === 'Pending'" @click="updateReport(report.reportId, 'Dismissed')" class="action-btn unverify">Dismiss</button>
+                    <button @click="deleteReport(report.reportId)" class="action-btn delete">Delete</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -96,7 +152,7 @@
             <div class="badges">
               <span :class="['badge', 'role', selectedUser.Role]">{{ selectedUser.Role }}</span>
               <span :class="['badge', 'status', selectedUser.Active ? 'active' : 'banned']">{{ selectedUser.Active ? 'Active' : 'Banned' }}</span>
-              <span v-if="selectedUser.Verified" class="badge verified">Verified</span>
+              <span v-if="selectedUser.Verified" class="verified-star">⭐️</span>
             </div>
           </div>
         </div>
@@ -117,13 +173,15 @@ export default {
   data() {
     return {
       users: [],
+      reports: [],
       searchQuery: '',
       filterRole: '',
       filterStatus: '',
       sortField: 'ID',
       sortDirection: 'asc',
       selectedUser: null,
-      userAvatars: {}
+      userAvatars: {},
+      activeTab: 'users'
     };
   },
   computed: {
@@ -134,6 +192,9 @@ export default {
         verified: { value: this.users.filter(u => u.Verified).length, label: 'Verified' },
         banned: { value: this.users.filter(u => !u.Active).length, label: 'Banned' }
       };
+    },
+    pendingReports() {
+      return this.reports.filter(r => r.Status === 'Pending').length;
     },
     filteredUsers() {
       return this.users.filter(user => {
@@ -155,7 +216,10 @@ export default {
       });
     }
   },
-  created() { this.fetchUsers(); },
+  created() { 
+    this.fetchUsers();
+    this.fetchReports();
+  },
   methods: {
     async fetchUsers() {
       try {
@@ -164,6 +228,12 @@ export default {
         for (const user of this.users) await this.fetchUserAvatar(user.ID);
       } catch (err) { console.error('Error fetching users:', err); }
     },
+    async fetchReports() {
+      try {
+        const response = await fetch('http://localhost:3000/api/admin/reports');
+        this.reports = await response.json();
+      } catch (err) { console.error('Error fetching reports:', err); }
+    },
     async fetchUserAvatar(userId) {
       try {
         const response = await fetch(`http://localhost:3000/api/profile/${userId}`);
@@ -171,7 +241,7 @@ export default {
         if (data.profilePictureUrl) this.$set(this.userAvatars, userId, data.profilePictureUrl);
       } catch (err) { console.error('Avatar error:', err); }
     },
-    getUserAvatar(userId) { return this.userAvatars[userId] ; },
+    getUserAvatar(userId) { return this.userAvatars[userId]; },
     formatDate(iso) { return new Date(iso).toLocaleDateString('en-GB'); },
     sortBy(field) {
       if (this.sortField === field) this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
@@ -202,16 +272,31 @@ export default {
         this.users = this.users.filter(u => u.ID !== user.ID);
       } catch (err) { console.error('Delete error:', err); }
     },
+    async updateReport(reportId, status) {
+      try {
+        await fetch(`http://localhost:3000/api/admin/reports/${reportId}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status, adminId: 1 })
+        });
+        const report = this.reports.find(r => r.reportId === reportId);
+        if (report) report.Status = status;
+      } catch (err) { console.error('Update report error:', err); }
+    },
+    async deleteReport(reportId) {
+      if (confirm('Delete this report?')) {
+        try {
+          await fetch(`http://localhost:3000/api/admin/reports/${reportId}`, { method: 'DELETE' });
+          this.reports = this.reports.filter(r => r.reportId !== reportId);
+        } catch (err) { console.error('Delete report error:', err); }
+      }
+    },
     viewUserDetails(user) { this.selectedUser = user; },
     closeModal() { this.selectedUser = null; },
     logout() {
       if (confirm('Are you sure you want to log out?')) {
-        // Clear any stored session data
         localStorage.clear();
-        
-        // Terug naar home page
         this.$router.push('/');
-
       }
     }
   }
@@ -251,6 +336,48 @@ export default {
 h1, h2, h3 { color: #dd1b45; margin: 0; }
 h1 { font-size: 2.5rem; }
 h2 { font-size: 1.5rem; }
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 10px;
+  border-bottom: 2px solid #fed7d7;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.tab-btn {
+  padding: 12px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  color: #718096;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.tab-btn.active {
+  color: #dd1b45;
+  border-bottom-color: #dd1b45;
+}
+
+.tab-btn:hover {
+  color: #dd1b45;
+  background: linear-gradient(135deg, #fef4e9 0%, #fed7d7 100%);
+}
+
+.notification-badge {
+  background: #e53e3e;
+  color: white;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: 8px;
+  font-weight: bold;
+}
 
 /* Stats Grid */
 .stats-grid {
@@ -388,7 +515,15 @@ h2 { font-size: 1.5rem; }
 .badge.role.user { background: linear-gradient(135deg, #fe741c 0%, #f6ad55 100%); }
 .badge.status.active { background: linear-gradient(135deg, #48bb78 0%, #68d391 100%); }
 .badge.status.banned { background: linear-gradient(135deg, #e53e3e 0%, #fc8181 100%); }
-.badge.verified { background: #48bb78; border-radius: 50%; }
+.badge.status.pending { background: linear-gradient(135deg, #e53e3e 0%, #fc8181 100%); }
+.badge.status.reviewed { background: linear-gradient(135deg, #48bb78 0%, #68d391 100%); }
+.badge.status.dismissed { background: linear-gradient(135deg, #718096 0%, #a0aec0 100%); }
+
+/* Verified Star */
+.verified-star {
+  font-size: 16px;
+  margin-left: 5px;
+}
 
 /* Actions */
 .actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: right; }
