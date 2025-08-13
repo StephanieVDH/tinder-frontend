@@ -11,6 +11,12 @@
     <section class="login-main">
       <h1>Welcome Back</h1>
       <p class="subtitle">Log in to continue making connections.</p>
+      
+      <!-- Error message display -->
+      <div v-if="errorMessage" class="error-message" :class="{ 'banned-message': isBanned }">
+        {{ errorMessage }}
+      </div>
+      
       <form @submit.prevent="handleLogin" class="login-form">
         <label>Email</label>
         <input type="email" v-model="email" required placeholder="Enter your email" />
@@ -35,7 +41,9 @@ export default {
     return {
       email: '',
       password: '',
-      isLoading: false
+      isLoading: false,
+      errorMessage: '',
+      isBanned: false
     };
   },
   mounted() {
@@ -52,6 +60,9 @@ export default {
   methods: {
     async handleLogin() {
       this.isLoading = true;
+      this.errorMessage = '';
+      this.isBanned = false;
+      
       try {
         const response = await fetch('http://localhost:3000/api/login', {
           method: 'POST',
@@ -65,7 +76,13 @@ export default {
         const data = await response.json();
         
         if (!response.ok) {
-          alert(data.error || 'Login failed');
+          // Check if it's a banned user
+          if (response.status === 403 && data.banned) {
+            this.isBanned = true;
+            this.errorMessage = data.error;
+          } else {
+            this.errorMessage = data.error || 'Login failed';
+          }
           return;
         }
 
@@ -83,7 +100,7 @@ export default {
         
       } catch (error) {
         console.error(error);
-        alert('An error occurred during login.');
+        this.errorMessage = 'An error occurred during login. Please try again.';
       } finally {
         this.isLoading = false;
       }
@@ -165,6 +182,25 @@ export default {
   margin-bottom: 2rem;
   color: #542254;
   text-align: center;
+}
+
+.error-message {
+  background-color: #fee;
+  color: #c33;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #fcc;
+  margin-bottom: 1rem;
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+}
+
+.banned-message {
+  background-color: #ffe6e6;
+  color: #d32f2f;
+  border-color: #ffcdd2;
+  font-weight: 600;
 }
 
 .login-form {
