@@ -96,10 +96,10 @@
           </svg>
         </button>
 
-        <!-- Report Button as Red Flag -->
+        <!-- Report Button - Updated Style -->
         <button @click="openReportModal" class="report-btn" title="Report this user">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="red">
-            <path d="M14 6l-1-2H6v16h2v-6h5l1 2h6V6h-6z"/>
+          <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M4.47 21h15.06c1.54 0 2.5-1.67 1.73-3L13.73 4.99c-.77-1.33-2.69-1.33-3.46 0L2.74 18c-.77 1.33.19 3 1.73 3zM12 14c-.55 0-1-.45-1-1v-2c0-.55.45-1 1-1s1 .45 1 1v2c0 .55-.45 1-1 1zm1 4h-2v-2h2v2z"/>
           </svg>
         </button>
         
@@ -962,6 +962,32 @@ export default {
   cursor: not-allowed;
 }
 
+/* Updated Report Button - Matching ConversationPage Style */
+.report-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #f8f9fa;
+  color: #666;
+  z-index: 10;
+}
+
+.report-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: #fff3cd;
+  color: #856404;
+}
+
 /* Report Modal Styles */
 .report-modal-overlay {
   position: fixed;
@@ -1111,30 +1137,6 @@ export default {
   color: #6c757d;
   cursor: not-allowed;
   transform: none;
-}
-
-/* Report Button */
-.report-btn {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  background: rgba(227, 190, 190, 0.6);
-  color: white;
-  border: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  z-index: 10;
-}
-
-.report-btn:hover {
-  background: rgba(220, 53, 69, 0.8);
-  transform: scale(1.1);
 }
 
 /* Report Success Notification */
