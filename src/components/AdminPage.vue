@@ -1,6 +1,5 @@
 <template>
   <div class="admin-container">
-    <!-- Header with Stats -->
     <div class="card">
       <div class="header-section">
         <h1>Admin Dashboard</h1>
@@ -101,7 +100,6 @@
       <div class="card">
         <div class="table-header">
           <h2>User Reports</h2>
-          <button @click="fetchReports" class="btn primary">🔄 Refresh</button>
         </div>
         
         <div class="table-wrapper">

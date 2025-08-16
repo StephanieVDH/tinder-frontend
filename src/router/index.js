@@ -10,7 +10,7 @@ import SwipePage from '@/components/SwipePage.vue';
 import UserProfile from '@/components/UserProfile.vue';
 import Matches from '@/components/Matches.vue'; 
 import Conversations from '@/components/Conversations.vue'; 
-
+import LocationSetup from '@/components/LocationSetup.vue';
 
 Vue.use(Router);
 
@@ -62,6 +62,11 @@ const router = new Router({
       component: Conversations,
       meta: { requiresAuth: true }
     },
+    {
+      path: '/location-setup',
+      name: 'location-setup',
+      component: LocationSetup
+    }
   ],
 });
 

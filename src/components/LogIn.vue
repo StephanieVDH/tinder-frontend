@@ -53,7 +53,8 @@ export default {
       if (user.role === 'admin') {
         this.$router.push({ name: 'admin' });
       } else {
-        this.$router.push({ name: 'swipe' });
+        // Check location for regular users before redirecting to swipe
+        this.checkUserLocationAndRedirect(user.id);
       }
     }
   },
@@ -91,7 +92,8 @@ export default {
         
         // Redirect based on role
         if (data.user.role === 'user') {
-          this.$router.push({ name: 'swipe' });
+          // Check location before redirecting to swipe
+          await this.checkUserLocationAndRedirect(data.user.id);
         } else if (data.user.role === 'admin') {
           this.$router.push({ name: 'admin' });
         } else {
@@ -103,6 +105,37 @@ export default {
         this.errorMessage = 'An error occurred during login. Please try again.';
       } finally {
         this.isLoading = false;
+      }
+    },
+
+    async checkUserLocationAndRedirect(userId) {
+      try {
+        // Check if user has location set
+        const response = await fetch(`http://localhost:3000/api/profile/${userId}/location`);
+        
+        if (!response.ok) {
+          // If API call fails, proceed to swipe page anyway
+          this.$router.push({ name: 'swipe' });
+          return;
+        }
+        
+        const locationData = await response.json();
+        
+        if (!locationData.hasLocation) {
+          // User has no location - redirect to location setup
+          this.$router.push({ 
+            name: 'location-setup',
+            params: { userId: userId }
+          });
+        } else {
+          // User has location - proceed to swipe page
+          this.$router.push({ name: 'swipe' });
+        }
+        
+      } catch (error) {
+        console.error('Error checking user location:', error);
+        // On error, proceed to swipe page anyway
+        this.$router.push({ name: 'swipe' });
       }
     },
 

@@ -213,7 +213,7 @@
                 <div class="form-group">
                   <label class="form-label">Maximum Distance</label>
                   <div class="distance-input">
-                    <input v-model.number="preferences.MaxDistance" type="range" min="1" max="100" class="distance-slider" />
+                    <input v-model.number="preferences.MaxDistance" type="range" min="1" max="150" class="distance-slider" />
                     <div class="distance-display">{{ preferences.MaxDistance }} km</div>
                   </div>
                 </div>
